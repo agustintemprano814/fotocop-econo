@@ -42,7 +42,6 @@
             line-height: 1.4;
         }
 
- 
         .period-selector {
             background: #f8fafc;
             padding: 20px;
@@ -111,7 +110,7 @@
                     </select>
                 </div>
                 <div style="flex-grow: 1; text-align: right; color: #94a3b8; font-size: 0.85rem;">
-                    Los reportes se descargan en formato Excel (.xlsx)
+                    Los reportes se descargan en formato Excel (.xlsx) de forma segura.
                 </div>
             </div>
 
@@ -135,7 +134,7 @@
                 <div class="report-card" style="border-top-color: #28a745;">
                     <h3>📈 Detalle de Ventas</h3>
                     <p>Desglose de cada ticket emitido por los operarios: Simple faz, Doble faz, Anillados y Ajustes.</p>
-                    <button class="btn-download" onclick="exportarColeccion('ventas_turnos', 'Reporte_Ventas_Turnos')">
+                    <button class="btn-download" onclick="exportarColeccion('ventas', 'Reporte_Ventas_Totales')">
                         📥 Exportar Ventas
                     </button>
                 </div>
@@ -145,70 +144,97 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { cargarSidebar } from './sidebar.js';
         import { verificarAcceso } from './security.js';
 
+        // --- FUNCIÓN DE SEGURIDAD ANTI-XSS ---
+        function sanitizarDatos(obj) {
+            const nuevoObj = {};
+            for (let clave in obj) {
+                if (typeof obj[clave] === 'string') {
+                    // Convertimos el contenido en texto plano para el Excel
+                    const temp = document.createElement('div');
+                    temp.textContent = obj[clave];
+                    nuevoObj[clave] = temp.innerHTML;
+                } else {
+                    nuevoObj[clave] = obj[clave];
+                }
+            }
+            return nuevoObj;
+        }
 
         verificarAcceso(['administrador', 'superusuario']).then(() => {
             cargarSidebar('reportes');
-            cargarConfig();
         }).catch(err => {
-            console.error("Acceso denegado:", err);
             window.location.href = "index.html";
         });
 
-        const fecha = new Date();
-        document.getElementById('selectMes').value = fecha.getMonth();
-        document.getElementById('selectAnio').value = fecha.getFullYear();
-
+        // Inicializar fechas
+        const fechaActual = new Date();
+        document.getElementById('selectMes').value = fechaActual.getMonth();
+        document.getElementById('selectAnio').value = fechaActual.getFullYear();
 
         window.exportarColeccion = async (nombreColeccion, nombreArchivo) => {
             const mes = parseInt(document.getElementById('selectMes').value);
             const anio = parseInt(document.getElementById('selectAnio').value);
             
+            // Definir rango del mes seleccionado
             const fechaInicio = new Date(anio, mes, 1);
             const fechaFin = new Date(anio, mes + 1, 0, 23, 59, 59);
 
             const btn = event.currentTarget;
             btn.disabled = true;
+            const originalText = btn.innerText;
             btn.innerText = "⏳ Procesando...";
 
             try {
+                // El reporte siempre debe filtrar por fecha para no agotar la cuota de lectura
                 const q = query(
                     collection(db, nombreColeccion),
-                    where("fecha", ">=", fechaInicio),
-                    where("fecha", "<=", fechaFin)
+                    where("fecha", ">=", fechaInicio.toISOString().split('T')[0]),
+                    where("fecha", "<=", fechaFin.toISOString().split('T')[0])
                 );
 
                 const querySnapshot = await getDocs(q);
-                const datos = [];
+                const datosExportar = [];
 
                 querySnapshot.forEach((doc) => {
-                    const d = doc.data();
+                    const rawData = doc.data();
+                    
+                    // APLICAMOS ESCUDO DE SEGURIDAD A LOS DATOS
+                    const dataLimpia = sanitizarDatos(rawData);
 
-                    const item = { ID: doc.id, ...d };
-                    if (item.fecha) item.fecha = item.fecha.toDate().toLocaleString();
-                    datos.push(item);
+                    // Formatear fechas para el Excel
+                    let fechaTexto = dataLimpia.fecha || "Sin fecha";
+                    if (rawData.timestamp && typeof rawData.timestamp.toDate === 'function') {
+                        fechaTexto = rawData.timestamp.toDate().toLocaleString();
+                    }
+
+                    datosExportar.push({
+                        ID_REGISTRO: doc.id,
+                        FECHA_HORA: fechaTexto,
+                        ...dataLimpia
+                    });
                 });
 
-                if (datos.length === 0) {
-                    alert("No se encontraron datos para el período seleccionado.");
+                if (datosExportar.length === 0) {
+                    alert("No hay registros en el mes seleccionado.");
                 } else {
-
-                    const worksheet = XLSX.utils.json_to_sheet(datos);
+                    // Generar Excel con SheetJS
+                    const worksheet = XLSX.utils.json_to_sheet(datosExportar);
                     const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, "Datos");
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
                     
-
-                    XLSX.writeFile(workbook, `${nombreArchivo}_${mes+1}_${anio}.xlsx`);
+                    // Descargar archivo
+                    XLSX.writeFile(workbook, `${nombreArchivo}_${mes + 1}_${anio}.xlsx`);
                 }
             } catch (error) {
-                console.error(error);
-                alert("Error al exportar los datos.");
+                console.error("Error en reporte:", error);
+                alert("Ocurrió un error al generar el reporte. Verifique la conexión o cuota de Firebase.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = `📥 Exportar ${nombreArchivo.split('_')[1]}`;
+                btn.innerText = originalText;
             }
         };
     </script>
