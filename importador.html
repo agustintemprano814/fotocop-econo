@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Importador Masivo | Fotocop-Econo</title>
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        .drop-zone {
+            border: 2px dashed var(--primary);
+            padding: 40px;
+            text-align: center;
+            border-radius: 15px;
+            background: rgba(164, 21, 91, 0.05);
+            cursor: pointer;
+            margin-bottom: 20px;
+        }
+        .status-card { display: none; margin-top: 20px; }
+        .btn-danger-outline {
+            background-color: transparent;
+            color: var(--danger);
+            border: 1px solid var(--danger);
+            margin-top: 20px;
+            width: auto;
+            padding: 10px 20px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .btn-danger-outline:hover {
+            background-color: var(--danger);
+            color: white;
+        }
+        .log-area div {
+            border-bottom: 1px solid #333;
+            padding: 4px 0;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <div id="sidebar" class="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <h2>📥 Importador de Historial 2025</h2>
+            <p>Sube tu archivo Excel respetando el orden de columnas (0 a 22).</p>
+
+            <div class="admin-card">
+                <div id="dropZone" class="drop-zone">
+                    <p>Click aquí o arrastra tu archivo Excel (.xlsx o .xls)</p>
+                    <input type="file" id="fileInput" hidden accept=".xlsx, .xls">
+                </div>
+
+                <div id="statusCard" class="status-card">
+                    <div class="progress-bar-container" style="background: #eee; border-radius: 5px; height: 10px; overflow: hidden;">
+                        <div id="progressBar" class="progress-bar" style="width: 0%; height: 100%; background: var(--primary); transition: width 0.3s;"></div>
+                    </div>
+                    <p id="statusText" style="margin-top: 10px; font-weight: bold;"></p>
+                    <div id="logArea" class="log-area" style="max-height: 250px; overflow-y: auto; background: #1a1a1b; color: #00ff00; padding: 15px; border-radius: 8px; font-size: 12px;"></div>
+                </div>
+
+                <hr style="margin: 30px 0; opacity: 0.1;">
+                
+                <div style="text-align: center;">
+                    <p style="font-size: 12px; color: var(--gray);">Zona de Pruebas:</p>
+                    <button id="btnLimpiarBD" class="btn-danger-outline">🗑️ Borrar todos los datos importados</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { verificarAcceso } from './security.js';
+        import { cargarSidebar } from './sidebar.js';
+        import { db } from './firebase-config.js';
+        import { collection, doc, writeBatch, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+        verificarAcceso(['superusuario']).then(() => {
+            cargarSidebar('admin');
+        });
+
+        const fileInput = document.getElementById('fileInput');
+        const dropZone = document.getElementById('dropZone');
+        const logArea = document.getElementById('logArea');
+        const btnLimpiar = document.getElementById('btnLimpiarBD');
+
+        dropZone.onclick = () => fileInput.click();
+
+        fileInput.onchange = (e) => {
+            const file = e.target.files[0];
+            if (file) procesarExcel(file);
+        };
+
+
+        btnLimpiar.onclick = async () => {
+            if (!confirm("⚠️ ¿Estás seguro? Se borrarán TODAS las lecturas y no cobrados. Esta acción es irreversible.")) return;
+
+            btnLimpiar.innerText = "⏳ Borrando...";
+            btnLimpiar.disabled = true;
+
+            try {
+                const colecciones = ["lecturas_maquinas", "no_cobrados"];
+                for (const colName of colecciones) {
+                    const querySnapshot = await getDocs(collection(db, colName));
+                    const batch = writeBatch(db);
+                    querySnapshot.forEach((documento) => batch.delete(documento.ref));
+                    await batch.commit();
+                }
+                alert("🗑️ Base de datos limpiada correctamente.");
+                location.reload();
+            } catch (error) {
+                console.error(error);
+                alert("Error al limpiar la base de datos.");
+            } finally {
+                btnLimpiar.innerText = "🗑️ Borrar todos los datos importados";
+                btnLimpiar.disabled = false;
+            }
+        };
+
+        async function procesarExcel(file) {
+            document.getElementById('statusCard').style.display = 'block';
+            logArea.innerHTML = "Iniciando proceso...<br>";
+            
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
+
+                const datos = rows.slice(1); 
+                let procesados = 0;
+
+                for (const fila of datos) {
+                    if (!fila[0]) continue; 
+
+                    const fechaStr = formatFecha(fila[0]);
+                    const batch = writeBatch(db);
+
+                    // 1. Mapeo de Contadores (Col 1 a 14)
+                    // M1_Ini=1, M1_Cie=2 | M2_Ini=3, M2_Cie=4...
+                    for (let i = 1; i <= 7; i++) {
+                        const colIni = (i * 2) - 1;
+                        const colCie = (i * 2);
+                        const valIni = Number(fila[colIni]) || 0;
+                        const valCie = Number(fila[colCie]) || 0;
+
+                        const docRef = doc(db, "lecturas_maquinas", `${fechaStr}_Ricoh${i}`);
+                        batch.set(docRef, {
+                            fecha: fechaStr,
+                            maquina: `Ricoh ${i}`,
+                            contador_inicio: valIni,
+                            contador_cierre: valCie,
+                            consumo: valCie - valIni
+                        });
+                    }
+
+                    // 2. Mapeo No Cobrados (Col 15 a 22)
+                    const docNoCobrados = doc(db, "no_cobrados", fechaStr);
+                    batch.set(docNoCobrados, {
+                        fecha: fechaStr,
+                        detalles: {
+                            cece:               Number(fila[15]) || 0,
+                            stock_apuntes:     Number(fila[16]) || 0,
+                            beca_apuntes:       Number(fila[17]) || 0,
+                            copias_internas_becados: Number(fila[18]) || 0,
+                            copias_originales:  Number(fila[19]) || 0,
+                            descartes:          Number(fila[20]) || 0,
+                            descartes_tecnicos: Number(fila[21]) || 0
+                        }
+                    });
+
+                    await batch.commit();
+                    procesados++;
+                    actualizarStatus(procesados, datos.length, fechaStr, fila);
+                }
+                alert("✅ Proceso terminado.");
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        function formatFecha(excelDate) {
+            if (!isNaN(excelDate) && excelDate > 40000) {
+                const date = new Date((excelDate - 25569) * 86400 * 1000);
+                return date.toISOString().split('T')[0];
+            }
+            return excelDate; 
+        }
+
+        function actualizarStatus(actual, total, fecha, fila) {
+            const porcentaje = Math.round((actual / total) * 100);
+            document.getElementById('progressBar').style.width = porcentaje + '%';
+            document.getElementById('statusText').innerText = `Progreso: ${porcentaje}%`;
+            
+
+            logArea.innerHTML += `<div>[${fecha}] M1:${fila[1]}->${fila[2]} | CECE:$${fila[15]} | OK</div>`;
+            logArea.scrollTop = logArea.scrollHeight;
+        }
+    </script>
+    <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import './auth-timeout.js'; 
+</script>
+</body>
+</html>

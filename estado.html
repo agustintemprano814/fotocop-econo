@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Estado de Máquinas | Fotocop-Econo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <style>
+        .grid-estado {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 20px;
+        }
+
+        .card-maquina {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #eee;
+            display: flex;
+            flex-direction: column;
+            transition: transform 0.2s;
+        }
+        .card-maquina:hover { transform: translateY(-3px); }
+
+        .card-header {
+            background: #f8f9fa;
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-header h3 {
+            margin: 0;
+            font-size: 1.1rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 0.85rem;
+            font-weight: bold;
+            padding: 4px 10px;
+            border-radius: 20px;
+        }
+
+        .online-label { color: #28a745; background: rgba(40, 167, 69, 0.1); }
+        .offline-label { color: #dc3545; background: rgba(220, 53, 69, 0.1); }
+
+        .dot {
+            height: 8px;
+            width: 8px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+        .dot-online { background-color: #28a745; box-shadow: 0 0 8px #28a745; }
+        .dot-offline { background-color: #dc3545; box-shadow: 0 0 8px #dc3545; }
+
+        .card-body {
+            padding: 20px;
+            flex-grow: 1;
+        }
+
+        .nota-box {
+            background: #fcfcfc;
+            border: 1px dashed #ddd;
+            padding: 12px;
+            border-radius: 8px;
+            color: #666;
+            font-size: 0.9rem;
+            min-height: 40px;
+        }
+
+
+        .time-stamp {
+            font-size: 0.75rem;
+            color: #999;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-top: 12px;
+            justify-content: flex-end;
+        }
+
+        .admin-zone {
+            padding: 15px 20px;
+            background: #ffffff;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .input-nota {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 12px;
+            font-size: 0.85rem;
+            box-sizing: border-box;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            border: 2px solid;
+            background: transparent;
+        }
+
+        .btn-reportar { border-color: #dc3545; color: #dc3545; }
+        .btn-reportar:hover { background: #dc3545; color: white; }
+
+        .btn-activar { border-color: #28a745; color: #28a745; }
+        .btn-activar:hover { background: #28a745; color: white; }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container" style="max-width: 1200px;">
+            <h2 style="margin-bottom: 25px; color: var(--secondary);">📊 Monitor de Operaciones</h2>
+            <div id="maquinasContainer" class="grid-estado"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { cargarSidebar } from './sidebar.js';
+        try { cargarSidebar('estado'); } catch(e) {}
+    </script>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { doc, getDoc, collection, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import './auth-timeout.js';
+
+        const container = document.getElementById('maquinasContainer');
+
+        verificarAcceso(['administrador', 'superusuario']).then(() => {
+            cargarSidebar('estado');
+            cargarConfig();
+        }).catch(err => {
+            console.error("Acceso denegado:", err);
+            window.location.href = "index.html";
+        });
+
+        function obtenerTiempoRelativo(fechaISO) {
+            if (!fechaISO) return "Sin registros";
+            const ahora = new Date();
+            const cambio = new Date(fechaISO);
+            const segundos = Math.floor((ahora - cambio) / 1000);
+
+            if (segundos < 60) return "Recién ahora";
+            const minutos = Math.floor(segundos / 60);
+            if (minutos < 60) return `hace ${minutos} min`;
+            const horas = Math.floor(minutos / 60);
+            if (horas < 24) return `hace ${horas} hs`;
+            const dias = Math.floor(horas / 24);
+            return `hace ${dias} días`;
+        }
+
+        window.cambiarEstado = async (id, nuevoEstado) => {
+            const nota = document.getElementById(`input-${id}`).value;
+            try {
+                await setDoc(doc(db, "estado_maquinas", `M${id}`), {
+                    activa: nuevoEstado,
+                    nota: nota || (nuevoEstado ? "Operativa" : "En revisión"),
+                    fechaActualizacion: new Date().toISOString()
+                });
+            } catch (e) {
+                alert("Error de permisos.");
+            }
+        };
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) return;
+
+            try {
+                const userDoc = await getDoc(doc(db, "usuarios", user.email));
+                const rol = userDoc.exists() ? userDoc.data().rol : "operario";
+                const puedeEditar = ["supervisor", "administrador", "superusuario"].includes(rol);
+
+                onSnapshot(collection(db, "estado_maquinas"), (snapshot) => {
+                    container.innerHTML = "";
+                    
+                    for (let i = 1; i <= 7; i++) {
+                        const docData = snapshot.docs.find(d => d.id === `M${i}`)?.data();
+                        const data = docData || { activa: true, nota: "Operativa", fechaActualizacion: null };
+                        
+                        const card = document.createElement('div');
+                        card.className = 'card-maquina';
+                        
+                        card.innerHTML = `
+                            <div class="card-header">
+                                <h3>Máquina 0${i}</h3>
+                                <div class="status-indicator ${data.activa ? 'online-label' : 'offline-label'}">
+                                    <span class="dot ${data.activa ? 'dot-online' : 'dot-offline'}"></span>
+                                    ${data.activa ? 'ONLINE' : 'OFFLINE'}
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <p style="font-size: 0.75rem; color: #aaa; margin-bottom: 8px;">OBSERVACIONES TÉCNICAS:</p>
+                                <div class="nota-box">${data.nota}</div>
+                                <div class="time-stamp">
+                                    🕒 ${obtenerTiempoRelativo(data.fechaActualizacion)}
+                                </div>
+                            </div>
+                            ${puedeEditar ? `
+                                <div class="admin-zone">
+                                    <input type="text" id="input-${i}" value="${data.nota}" class="input-nota" placeholder="Actualizar novedad...">
+                                    <button onclick="window.cambiarEstado('${i}', ${!data.activa})" 
+                                        class="btn-action ${data.activa ? 'btn-reportar' : 'btn-activar'}">
+                                        ${data.activa ? 'Reportar Falla' : 'Dar de Alta'}
+                                    </button>
+                                </div>
+                            ` : ''}
+                        `;
+                        container.appendChild(card);
+                    }
+                });
+            } catch (e) { console.error(e); }
+        });
+    </script>
+</body>
+</html>

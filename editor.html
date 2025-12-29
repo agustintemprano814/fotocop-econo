@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Editor de Registros | Fotocop-Econo</title>
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .mode-switch {
+            display: flex;
+            justify-content: center;
+            background: #eee;
+            padding: 5px;
+            border-radius: 50px;
+            max-width: 600px;
+            margin: 20px auto;
+            gap: 5px;
+        }
+        .switch-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+            background: transparent;
+            color: #666;
+            font-size: 0.8rem;
+        }
+        .switch-btn.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 10px rgba(164, 21, 91, 0.3);
+        }
+        .record-card {
+            background: white;
+            border-radius: 12px;
+            padding: 15px 20px;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-left: 5px solid var(--secondary);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+        .record-info { flex-grow: 1; }
+        .record-info h4 { margin: 0; font-size: 1rem; color: var(--dark); }
+        .record-info p { margin: 3px 0 0 0; font-size: 0.85rem; color: #777; }
+        
+        .badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: inline-block; }
+        .badge-venta { background: #e3f2fd; color: #1976d2; }
+        .badge-cierre { background: #f3e5f5; color: #7b1fa2; }
+        .badge-insumo { background: #e8f5e9; color: #2e7d32; }
+
+        .btn-action { padding: 10px; border-radius: 6px; border: none; cursor: pointer; margin-left: 10px; transition: 0.2s; }
+        .btn-del { background: #ffebee; color: var(--danger); }
+        .btn-del:hover { background: var(--danger); color: white; }
+        
+        .filter-container-centered {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <h2 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px;">🔍 Auditoría y Limpieza de Datos</h2>
+
+            <div class="mode-switch">
+                <button id="modeCierres" class="switch-btn active">📂 CIERRES</button>
+                <button id="modeVentas" class="switch-btn">🛒 VENTAS</button>
+                <button id="modeInsumos" class="switch-btn">📦 INSUMOS</button>
+            </div>
+            
+            <div class="filter-container-centered">
+                <div class="form-group" style="margin:0">
+                    <input type="date" id="filtroFecha">
+                </div>
+                <button id="btnBuscar" style="width:auto; padding: 0 25px; background: var(--dark); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">BUSCAR REGISTROS</button>
+            </div>
+
+            <div id="resultadosAuditoria" style="margin-top: 30px;">
+                <p id="status-msg" style="text-align: center; color: var(--gray);">Selecciona una categoría y fecha para auditar.</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { collection, query, where, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { verificarAcceso } from './security.js';
+        import { cargarSidebar } from './sidebar.js';
+        import './auth-timeout.js';
+
+        // Mapeo de modos a nombres de colecciones reales en Firebase
+        const colecciones = {
+            'cierres': 'cierres',
+            'ventas': 'ventas',
+            'insumos': 'insumos'
+        };
+
+        let modoActual = 'cierres';
+        const resultadosDiv = document.getElementById('resultadosAuditoria');
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    await verificarAcceso(['supervisor', 'superusuario', 'administrador']);
+                    cargarSidebar('editor'); 
+                } catch (e) { console.error(e); }
+            } else {
+                window.location.href = "index.html";
+            }
+        });
+
+        // Configurar botones de modo
+        document.getElementById('modeCierres').onclick = (e) => cambiarModo('cierres', e.target);
+        document.getElementById('modeVentas').onclick = (e) => cambiarModo('ventas', e.target);
+        document.getElementById('modeInsumos').onclick = (e) => cambiarModo('insumos', e.target);
+
+        function cambiarModo(modo, btn) {
+            modoActual = modo;
+            document.querySelectorAll('.switch-btn').forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            resultadosDiv.innerHTML = `<p style="text-align:center">Modo ${modo.toUpperCase()} activado. Presiona Buscar.</p>`;
+        }
+
+        document.getElementById('btnBuscar').onclick = async () => {
+            const fechaInput = document.getElementById('filtroFecha').value;
+            if(!fechaInput) return alert("Por favor selecciona una fecha.");
+            
+            resultadosDiv.innerHTML = "<p style='text-align:center'>🔍 Escaneando base de datos...</p>";
+
+            // Lógica híbrida para fechas (String y Timestamp)
+            try {
+                const q = query(collection(db, colecciones[modoActual]));
+                const snap = await getDocs(q);
+                
+                renderizarResultados(snap, fechaInput);
+            } catch (error) {
+                resultadosDiv.innerHTML = "❌ Error: " + error.message;
+            }
+        };
+
+        function renderizarResultados(snapshot, fechaFiltro) {
+            resultadosDiv.innerHTML = "";
+            let encontrados = 0;
+
+            snapshot.forEach(documento => {
+                const data = documento.data();
+                const id = documento.id;
+                
+                // Normalización de fecha para comparar
+                let fechaDoc = "";
+                if (data.fecha && typeof data.fecha.toDate === 'function') {
+                    fechaDoc = data.fecha.toDate().toISOString().split('T')[0];
+                } else if (typeof data.fecha === 'string') {
+                    fechaDoc = data.fecha.split('T')[0];
+                }
+
+                if (fechaDoc === fechaFiltro) {
+                    encontrados++;
+                    let htmlCard = "";
+
+                    if (modoActual === 'cierres') {
+                        htmlCard = `
+                            <div class="record-card" style="border-left-color: #7b1fa2">
+                                <div class="record-info">
+                                    <span class="badge badge-cierre">CIERRE</span>
+                                    <h4>Supervisor: ${data.supervisor || 'No indicado'}</h4>
+                                    <p>Total: $${data.caja?.total_neto || 0} | Usuario: ${data.usuario || 'N/A'}</p>
+                                </div>
+                                <button class="btn-action btn-del" onclick="window.borrarRegistro('cierres', '${id}')">🗑️ Borrar</button>
+                            </div>`;
+                    } else if (modoActual === 'ventas') {
+                        htmlCard = `
+                            <div class="record-card" style="border-left-color: #1976d2">
+                                <div class="record-info">
+                                    <span class="badge badge-venta">VENTA</span>
+                                    <h4>Monto: $${data.monto}</h4>
+                                    <p>Metodo: ${data.metodo || 'Efectivo'} | Operario: ${data.operario || 'N/A'}</p>
+                                </div>
+                                <button class="btn-action btn-del" onclick="window.borrarRegistro('ventas', '${id}')">🗑️ Borrar</button>
+                            </div>`;
+                    } else if (modoActual === 'insumos') {
+                        // AQUÍ PODRÁS VER EL "CÓDIGO" SI ESTÁ EN NOTAS O DETALLE
+                        htmlCard = `
+                            <div class="record-card" style="border-left-color: #2e7d32">
+                                <div class="record-info">
+                                    <span class="badge badge-insumo">INSUMO / MTTO</span>
+                                    <h4>${data.categoria?.toUpperCase() || 'INSUMO'}: ${data.maquina || ''}</h4>
+                                    <p>Costo: $${data.costo} | <strong>Detalle:</strong> ${data.notas || data.detalle || 'Sin notas'}</p>
+                                    <small style="color:red">ID: ${id}</small>
+                                </div>
+                                <button class="btn-action btn-del" onclick="window.borrarRegistro('insumos', '${id}')">🗑️ ELIMINAR</button>
+                            </div>`;
+                    }
+                    resultadosDiv.innerHTML += htmlCard;
+                }
+            });
+
+            if(encontrados === 0) {
+                resultadosDiv.innerHTML = `<p style="text-align:center">No hay registros de ${modoActual} para el día ${fechaFiltro}.</p>`;
+            }
+        }
+
+        window.borrarRegistro = async (coleccion, id) => {
+            if(!confirm(`⚠️ ¿ELIMINAR REGISTRO?\nEsta acción limpiará el dato corrupto de la base de datos.`)) return;
+            try {
+                await deleteDoc(doc(db, coleccion, id));
+                alert("✅ Registro eliminado exitosamente.");
+                document.getElementById('btnBuscar').click();
+            } catch (error) {
+                alert("❌ Error: No tienes permisos para borrar o la cuota se excedió.");
+            }
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard Financiero | Fotocop-Econo</title>
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        .kpi-card {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-bottom: 4px solid var(--primary);
+            text-align: center;
+        }
+        .kpi-card span { font-size: 0.85rem; color: var(--gray); font-weight: bold; text-transform: uppercase; }
+        .kpi-card h2 { margin: 10px 0 0 0; font-size: 1.8rem; color: var(--secondary); border: none; padding: 0; }
+        
+        .charts-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+
+        .chart-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            height: 380px; 
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            min-height: 0; 
+        }
+
+        .chart-box-wide {
+            height: 320px;
+            margin-top: 20px;
+        }
+
+        .filter-bar {
+            background: var(--white-trans);
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 25px;
+            align-items: flex-end;
+            backdrop-filter: blur(5px);
+        }
+        .filter-group { display: flex; flex-direction: column; gap: 5px; }
+        .filter-group input, .filter-group select { width: 180px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
+
+        h3 { margin-top: 0; margin-bottom: 15px; font-size: 1.1rem; color: var(--secondary); }
+
+        @media (max-width: 900px) {
+            .charts-grid { grid-template-columns: 1fr; }
+            .chart-box { height: 320px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container" style="max-width: 1200px;">
+            <h2 style="margin-bottom: 25px;">💰 Panel de Control Financiero</h2>
+
+            <div class="filter-bar">
+                <div class="filter-group">
+                    <label>Desde:</label>
+                    <input type="date" id="fechaDesde">
+                </div>
+                <div class="filter-group">
+                    <label>Hasta:</label>
+                    <input type="date" id="fechaHasta">
+                </div>
+                <div class="filter-group">
+                    <label>Operario:</label>
+                    <select id="filtroOperario">
+                        <option value="todos">Todos</option>
+                    </select>
+                </div>
+                <div class="filter-group">
+                    <label>Servicio:</label>
+                    <select id="filtroServicio">
+                        <option value="todos">Todos</option>
+                        <option value="impresion">Impresión</option>
+                        <option value="fotocopia">Fotocopia</option>
+                        <option value="anillado">Anillado</option>
+                    </select>
+                </div>
+                <button id="btnFiltrar" style="width: auto; padding: 10px 25px; background: var(--secondary); color: white; border: none; border-radius: 8px; cursor: pointer;">🔍 FILTRAR</button>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="kpi-card"><span>Ganancia Neta</span><h2 id="kpiGanancia">$ 0.00</h2></div>
+                <div class="kpi-card" style="border-bottom-color: var(--secondary);"><span>Recaudación Total</span><h2 id="kpiRecaudacion">$ 0.00</h2></div>
+                <div class="kpi-card" style="border-bottom-color: var(--danger);"><span>Gastos Insumos</span><h2 id="kpiGastos">$ 0.00</h2></div>
+                <div class="kpi-card" style="border-bottom-color: var(--success);"><span>Eficiencia de Costos</span><h2 id="kpiEficiencia">0%</h2></div>
+            </div>
+
+            <div class="charts-grid">
+                <div class="chart-box">
+                    <h3>📈 Ganancia Real</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="chartGananciaArea"></canvas>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <h3>📑 Distribución de Ajustes</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="chartAjustesTorta"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chart-box chart-box-wide">
+                <h3>📊 Recaudación por Subida</h3>
+                <div class="canvas-wrapper">
+                    <canvas id="chartTurnosBarras"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { cargarSidebar } from './sidebar.js';
+        try { cargarSidebar('dash'); } catch (e) { console.error(e); }
+    </script>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import './auth-timeout.js';
+
+        let costoPasadaGlobal = 1;
+        let chartArea, chartTorta, chartBarras;
+
+        const hoy = new Date();
+        document.getElementById('fechaHasta').value = hoy.toISOString().split('T')[0];
+        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
+        document.getElementById('fechaDesde').value = inicioMes.toISOString().split('T')[0];
+
+        verificarAcceso(['administrador', 'superusuario']).then(() => {
+            cargarSidebar('dash');
+            cargarConfig();
+        }).catch(err => {
+            console.error("Acceso denegado:", err);
+            window.location.href = "index.html";
+        });
+
+        async function inicializar() {
+            try {
+                const snap = await getDoc(doc(db, "configuracion", "global"));
+                if (snap.exists()) costoPasadaGlobal = snap.data().costo_pasada || 0;
+            } catch (e) { console.warn("Usando costo_pasada default."); }
+            cargarDashboard();
+        }
+
+        async function cargarDashboard() {
+            const desdeInput = document.getElementById('fechaDesde').value;
+            const hastaInput = document.getElementById('fechaHasta').value;
+            if (!desdeInput || !hastaInput) return;
+
+            const desde = new Date(desdeInput + "T00:00:00");
+            const hasta = new Date(hastaInput + "T23:59:59");
+            const opFiltro = document.getElementById('filtroOperario').value;
+            const servFiltro = document.getElementById('filtroServicio').value;
+
+            try {
+                const qVentas = query(collection(db, "ventas_turnos"), where("fecha", ">=", desde), where("fecha", "<=", hasta));
+                const qInsumos = query(collection(db, "insumos"), where("fecha", ">=", desde), where("fecha", "<=", hasta));
+
+                const [snapVentas, snapInsumos] = await Promise.all([getDocs(qVentas), getDocs(qInsumos)]);
+
+                let totalVentas = 0, totalInsumos = 0;
+                let ventasProcesadas = [];
+                const selectOp = document.getElementById('filtroOperario');
+                const operariosUnicos = new Set();
+
+                snapVentas.forEach(doc => {
+                    const data = doc.data();
+                    operariosUnicos.add(data.email_operario);
+                    if (opFiltro !== "todos" && data.email_operario !== opFiltro) return;
+
+                    let montoTurno = (servFiltro === "todos") ? (data.total_final_turno || 0) : 
+                        (data.ventas_detalle?.filter(v => v.servicio === servFiltro) || []).reduce((acc, v) => acc + v.monto, 0);
+                    
+                    totalVentas += montoTurno;
+                    ventasProcesadas.push({ ...data, montoCalculado: montoTurno });
+                });
+
+                if (selectOp.options.length <= 1) {
+                    operariosUnicos.forEach(op => {
+                        const el = document.createElement('option');
+                        el.value = op; el.textContent = op;
+                        selectOp.appendChild(el);
+                    });
+                }
+
+                snapInsumos.forEach(doc => { totalInsumos += doc.data().costo_total || 0; });
+
+                document.getElementById('kpiRecaudacion').innerText = `$ ${totalVentas.toLocaleString()}`;
+                document.getElementById('kpiGastos').innerText = `$ ${totalInsumos.toLocaleString()}`;
+                document.getElementById('kpiGanancia').innerText = `$ ${(totalVentas - totalInsumos).toLocaleString()}`;
+                document.getElementById('kpiEficiencia').innerText = `${totalVentas > 0 ? ((totalInsumos / totalVentas) * 100).toFixed(1) : 0}%`;
+
+                renderizarCharts(ventasProcesadas);
+            } catch (err) { console.error(err); }
+        }
+
+        function renderizarCharts(ventas) {
+            if (chartArea) chartArea.destroy();
+            if (chartTorta) chartTorta.destroy();
+            if (chartBarras) chartBarras.destroy();
+
+            const ventasDia = {};
+            ventas.forEach(v => {
+                const f = v.fecha.toDate().toLocaleDateString();
+                ventasDia[f] = (ventasDia[f] || 0) + v.montoCalculado;
+            });
+
+            const labels = Object.keys(ventasDia).sort((a,b) => new Date(a) - new Date(b));
+            const opts = { 
+                responsive: true, 
+                maintainAspectRatio: false,
+                plugins: { legend: { position: 'bottom', labels: { boxWidth: 12 } } }
+            };
+
+            chartArea = new Chart(document.getElementById('chartGananciaArea'), {
+                type: 'line',
+                data: {
+                    labels,
+                    datasets: [{ label: 'Ingresos', data: labels.map(l => ventasDia[l]), borderColor: '#a4155b', backgroundColor: 'rgba(164, 21, 91, 0.1)', fill: true }]
+                },
+                options: opts
+            });
+
+            const conAjuste = ventas.filter(v => v.ajuste_monto !== 0).length;
+            chartTorta = new Chart(document.getElementById('chartAjustesTorta'), {
+                type: 'doughnut',
+                data: { labels: ['Ajuste', 'Limpio'], datasets: [{ data: [conAjuste, ventas.length - conAjuste], backgroundColor: ['#e74c3c', '#28a745'] }] },
+                options: opts
+            });
+
+            const ultimas = ventas.slice(-12);
+            chartBarras = new Chart(document.getElementById('chartTurnosBarras'), {
+                type: 'bar',
+                data: {
+                    labels: ultimas.map(v => v.fecha.toDate().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})),
+                    datasets: [{ label: 'Monto ($)', data: ultimas.map(v => v.montoCalculado), backgroundColor: '#a4155b' }]
+                },
+                options: opts
+            });
+        }
+
+        document.getElementById('btnFiltrar').onclick = cargarDashboard;
+        auth.onAuthStateChanged(user => { if(user) inicializar(); });
+    </script>
+</body>
+</html>

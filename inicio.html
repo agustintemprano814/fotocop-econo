@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Inicio | Fotocop-Econo</title>
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="stylesheet" href="style.css">
+    <style>
+
+        document.documentElement.style.display = 'none';
+
+        .main-content-lobby { 
+            margin-left: 0 !important; 
+            padding: 40px; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            min-height: 100vh; 
+        }
+
+        .lobby-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+
+        .lobby-card {
+            background: white;
+            padding: 40px 20px;
+            border-radius: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.1);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            position: relative;
+        }
+
+        .lobby-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 30px rgba(164, 21, 91, 0.2);
+            border-color: var(--primary);
+        }
+
+        .lobby-card .icon-placeholder { font-size: 3rem; position: relative; }
+        .lobby-card span { font-weight: bold; font-size: 1.1rem; color: var(--secondary); }
+        
+        .logo-inicio-container {
+            width: 100px;
+            height: 100px;
+            margin: 0 auto 15px auto;
+            border-radius: 50%;
+            border: 4px solid var(--primary);
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: white;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+        }
+
+        .logo-inicio-container img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+    </style>
+</head>
+<body>
+    <div class="main-content-lobby">
+        <div class="container" style="max-width: 1000px; width: 100%;">
+            <div style="text-align: center; margin-bottom: 40px;">
+                <div class="logo-inicio-container">
+                    <img src="https://linktr.ee/og/image/franjaeconounlp.jpg" alt="Logo">
+                </div>
+                <h1 style="color: var(--primary); margin: 10px 0 5px 0;">Panel de Control</h1>
+                <p id="user-email" style="color: var(--gray); font-weight: 600;"></p>
+            </div>
+
+            <div id="menu-lobby" class="lobby-grid">
+                </div>
+
+            <div style="text-align: center; margin-top: 50px;">
+                <button id="btnCerrarSesion" style="background: var(--dark); width: auto; padding: 12px 30px;">
+                    🚪 Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import './auth-timeout.js';
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+
+            document.getElementById('user-email').innerText = user.email;
+
+            try {
+                const docSnap = await getDoc(doc(db, "usuarios", user.email));
+                const rol = docSnap.exists() ? docSnap.data().rol : "operario";
+
+                const opciones = [
+
+                    { id: 'ventas', icon: '🛒', label: 'Ventas', url: 'ventas.html', roles: ['operario', 'supervisor', 'administrador', 'superusuario'] },
+                    { id: 'estado', icon: '🖨️', label: 'Estado', url: 'estado.html', roles: ['operario', 'supervisor', 'administrador', 'superusuario'] },
+                    { id: 'cierre', icon: '📑', label: 'Cierre', url: 'cierres.html', roles: ['supervisor', 'superusuario'] },
+                    { id: 'insumos', icon: '📦', label: 'Insumos', url: 'insumos.html', roles: ['supervisor', 'administrador', 'superusuario'] },
+                    { id: 'editor', icon: '🛠️', label: 'Edición', url: 'editor.html', roles: ['supervisor', 'superusuario'] },
+                    { id: 'dash', icon: '📊', label: 'Dashboard Financiero', url: 'dashboard-financiero.html', roles: ['administrador', 'superusuario'] },
+                    { id: 'rendimiento', icon: '📈', label: 'Rendimiento Técnico', url: 'rendimiento.html', roles: ['administrador', 'superusuario'] },
+                    { id: 'rep', icon: '📂', label: 'Reportes', url: 'reportes.html', roles: ['superusuario'] },
+                    { id: 'admin', icon: '📥', label: 'Importar', url: 'importador.html', roles: ['superusuario'] },
+                    { id: 'config', icon: '⚙️', label: 'Configuración', url: 'configuracion.html', roles: ['administrador', 'superusuario'] }
+                ];
+
+                const lobbyContainer = document.getElementById('menu-lobby');
+                lobbyContainer.innerHTML = ''; 
+
+                opciones.forEach(op => {
+                    const tieneAcceso = op.roles.includes(rol);
+                    
+
+                    if (!tieneAcceso) return;
+
+                    const card = document.createElement('div');
+                    card.className = `lobby-card`;
+                    
+                    card.innerHTML = `
+                        <div class="icon-placeholder">${op.icon}</div>
+                        <span>${op.label}</span>
+                    `;
+
+                    card.onclick = () => {
+                        window.location.href = op.url;
+                    };
+                    
+                    lobbyContainer.appendChild(card);
+                });
+
+
+                document.documentElement.style.display = 'block';
+                document.body.style.display = 'block';
+
+            } catch (error) {
+                console.error("Error al cargar el lobby:", error);
+            }
+        });
+
+        document.getElementById('btnCerrarSesion').onclick = () => {
+            signOut(auth).then(() => window.location.href = "index.html");
+        };
+    </script>
+</body>
+</html> 

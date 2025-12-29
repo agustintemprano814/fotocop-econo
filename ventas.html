@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Ventas por Turno | Fotocop-Econo</title>
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .ventas-layout {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+        }
+        @media (max-width: 800px) { .ventas-layout { grid-template-columns: 1fr; } }
+
+        .historial-container {
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .venta-item {
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-size: 0.9rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .tag-servicio {
+            font-size: 10px;
+            background: #f0f0f0;
+            padding: 2px 6px;
+            border-radius: 4px;
+            text-transform: uppercase;
+            font-weight: bold;
+            color: var(--primary);
+        }
+        
+        .total-box {
+            background: var(--primary);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 15px rgba(164, 21, 91, 0.3);
+        }
+        .total-box p { margin: 0; font-weight: bold; color: white; opacity: 0.9; }
+        .total-box h2 { margin: 5px 0 0 0; font-size: 2.5rem; color: white; }
+
+
+        .selector-servicio {
+            display: flex;
+            gap: 8px;
+            margin: 10px 0 20px 0;
+        }
+        .servicio-btn {
+            flex: 1;
+            padding: 12px 5px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            background: white;
+            cursor: pointer; 
+            font-weight: bold;
+            font-size: 12px;
+            color: #4e4e4e;
+            transition: all 0.2s;
+        }
+        .servicio-btn.selected {
+            border-color: var(--primary);
+            background: rgba(164, 21, 91, 0.05);
+            color: var(--primary);
+        }
+
+        .ajuste-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border-left: 4px solid var(--primary);
+        }
+
+        input[type="number"], textarea {
+            width: 100%;
+            padding: 12px;
+            margin-top: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 8px;
+            font-family: inherit;
+        }
+
+        textarea { resize: vertical; min-height: 60px; }
+
+        .btn-main {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        #btnLimpiarLocal {
+            display: none;
+            background: none;
+            color: #999;
+            font-size: 11px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            padding: 8px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="ventas-layout">
+                
+                <div class="registro-zona">
+                    <div class="total-box">
+                        <p>ACUMULADO DEL TURNO</p>
+                        <h2 id="montoAcumulado">$ 0.00</h2>
+                    </div>
+
+                    <div class="card" style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
+                        <h3 style="margin:0 0 15px 0;">🛒 Nueva Registración</h3>
+                        <label>Monto de la Venta ($)</label>
+                        <input type="number" id="inputMonto" placeholder="Ej: 1500" step="0.01">
+                        
+                        <label>Categoría del Servicio:</label>
+                        <div class="selector-servicio" id="selectorServicio">
+                            <button class="servicio-btn selected" data-servicio="impresion">🖨️ Impresión</button>
+                            <button class="servicio-btn" data-servicio="fotocopia">📄 Fotocopia</button>
+                            <button class="servicio-btn" data-servicio="anillado">🌀 Anillado</button>
+                        </div>
+
+                        <button id="btnRegistrar" class="btn-main" style="background: var(--primary);">➕ REGISTRAR EN MEMORIA</button>
+                    </div>
+
+                    <div class="ajuste-section">
+                        <h3 style="margin:0 0 10px 0;">📝 Ajustes / Notas</h3>
+                        <textarea id="notaDiferencia" placeholder="¿Alguna observación sobre este turno?"></textarea>
+                        <label>Monto a Ajustar ($)</label>
+                        <input type="number" id="montoAjuste" placeholder="Ej: 500" step="0.01">
+                        <button id="btnCierreTurno" class="btn-main" style="background: var(--dark);">🚀 FINALIZAR Y SUBIR TURNO</button>
+                    </div>
+                </div>
+
+                <div class="historial-container">
+                    <h3 style="margin-top:0;">📋 Movimientos</h3>
+                    <div id="listaVentasLocal"></div>
+                    <button id="btnLimpiarLocal">BORRAR MEMORIA LOCAL (ADMIN)</button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { cargarSidebar } from './sidebar.js';
+        import './auth-timeout.js';
+
+
+        cargarSidebar('ventas');
+
+
+        let ventasTemporales = JSON.parse(localStorage.getItem('ventas_turno')) || [];
+        let servicioSeleccionado = "impresion";
+
+        const inputMonto = document.getElementById('inputMonto');
+        const listaDiv = document.getElementById('listaVentasLocal');
+        const montoTotalTxt = document.getElementById('montoAcumulado');
+        const btnLimpiarLocal = document.getElementById('btnLimpiarLocal');
+        const btnsServicio = document.querySelectorAll('.servicio-btn');
+
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "index.html";
+                return;
+            }
+            try {
+                const docSnap = await getDoc(doc(db, "usuarios", user.email));
+                if (docSnap.exists() && docSnap.data().rol === 'superusuario') {
+                    btnLimpiarLocal.style.display = 'block';
+                }
+            } catch (e) { console.error("Error validando rol:", e); }
+        });
+
+        btnsServicio.forEach(btn => {
+            btn.onclick = () => {
+                btnsServicio.forEach(b => b.classList.remove('selected'));
+                btn.classList.add('selected');
+                servicioSeleccionado = btn.dataset.servicio;
+            };
+        });
+
+        function actualizarUI() {
+            listaDiv.innerHTML = "";
+            const mostrar = [...ventasTemporales].reverse().slice(0, 30);
+            
+            mostrar.forEach(v => {
+                listaDiv.innerHTML += `
+                    <div class="venta-item">
+                        <div>
+                            <span class="tag-servicio">${v.servicio || 'S/D'}</span>
+                            <br><small style="color:#999;">${v.hora}</small>
+                        </div>
+                        <strong>$${parseFloat(v.monto).toFixed(2)}</strong>
+                    </div>`;
+            });
+
+            const totalReal = ventasTemporales.reduce((acc, v) => acc + parseFloat(v.monto), 0);
+            montoTotalTxt.innerText = `$ ${totalReal.toFixed(2)}`;
+            localStorage.setItem('ventas_turno', JSON.stringify(ventasTemporales));
+        }
+
+        document.getElementById('btnRegistrar').onclick = () => {
+            const monto = parseFloat(inputMonto.value);
+            if (!monto || monto <= 0) return;
+
+            const nuevaVenta = {
+                monto: monto,
+                servicio: servicioSeleccionado,
+                hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+                timestamp: Date.now()
+            };
+
+            ventasTemporales.push(nuevaVenta);
+            inputMonto.value = "";
+            inputMonto.focus();
+            actualizarUI();
+        };
+
+        document.getElementById('btnCierreTurno').onclick = async () => {
+            if (ventasTemporales.length === 0) return alert("No hay ventas registradas.");
+            
+            const totalRegistrado = ventasTemporales.reduce((acc, v) => acc + parseFloat(v.monto), 0);
+            const ajuste = parseFloat(document.getElementById('montoAjuste').value) || 0;
+            const totalFinal = totalRegistrado + ajuste;
+            const nota = document.getElementById('notaDiferencia').value;
+
+            if (!confirm(`¿Cerrar turno con un total de $${totalFinal.toFixed(2)}?`)) return;
+
+            try {
+                await addDoc(collection(db, "ventas_turnos"), {
+                    email_operario: auth.currentUser.email,
+                    ventas_detalle: ventasTemporales,
+                    total_registrado: totalRegistrado,
+                    ajuste_monto: ajuste,
+                    total_final_turno: totalFinal,
+                    observaciones: nota,
+                    fecha: serverTimestamp()
+                });
+
+                alert("Turno guardado correctamente en la nube.");
+                
+                ventasTemporales = [];
+                localStorage.removeItem('ventas_turno');
+                document.getElementById('montoAjuste').value = "";
+                document.getElementById('notaDiferencia').value = "";
+                actualizarUI();
+
+            } catch (e) {
+                alert("Error al subir: " + e.message);
+            }
+        };
+
+        btnLimpiarLocal.onclick = () => {
+            if(confirm("¿Borrar memoria local?")) {
+                ventasTemporales = [];
+                localStorage.removeItem('ventas_turno');
+                actualizarUI();
+            }
+        };
+
+        actualizarUI();
+    </script>
+</body>
+</html>

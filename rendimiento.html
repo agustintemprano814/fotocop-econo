@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Rendimiento Técnico | Fotocop-Econo</title>
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .rendimiento-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .kpi-tecnico {
+            background: white;
+            padding: 15px;
+            border-radius: 12px;
+            border-top: 4px solid var(--secondary);
+            text-align: center;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+        }
+        .kpi-tecnico span { font-size: 10px; color: var(--gray); font-weight: bold; text-transform: uppercase; }
+        .kpi-tecnico h2 { margin: 5px 0 0 0; font-size: 1.3rem; border: none; padding: 0; color: var(--secondary); }
+        
+        .chart-row {
+            display: grid;
+            grid-template-columns: 1.5fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .chart-box {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            display: flex;
+            flex-direction: column;
+            height: 380px;
+            overflow: hidden;
+        }
+
+        .canvas-wrapper {
+            position: relative;
+            flex-grow: 1;
+            width: 100%;
+            min-height: 0;
+        }
+
+        .alert-card {
+            background: white;
+            border-left: 5px solid var(--danger);
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        @media (max-width: 900px) { 
+            .chart-row { grid-template-columns: 1fr; } 
+            .chart-box { height: 320px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main-content">
+        <div class="container" style="max-width: 1200px;">
+            <h2>📈 Rendimiento Técnico</h2>
+
+            <div class="filter-bar" style="display:flex; gap:15px; background:#f9f9f9; padding:15px; border-radius:10px; margin-bottom:20px; align-items:flex-end; flex-wrap: wrap;">
+                <div class="filter-group">
+                    <label>Desde:</label>
+                    <input type="date" id="fechaDesde">
+                </div>
+                <div class="filter-group">
+                    <label>Hasta:</label>
+                    <input type="date" id="fechaHasta">
+                </div>
+                <div class="filter-group">
+                    <label>Máquina:</label>
+                    <select id="filtroMaquina">
+                        <option value="todas">Todas las máquinas</option>
+                        <option value="M1">Máquina 1</option>
+                        <option value="M2">Máquina 2</option>
+                        <option value="M3">Máquina 3</option>
+                        <option value="M4">Máquina 4</option>
+                        <option value="M5">Máquina 5</option>
+                        <option value="M6">Máquina 6</option>
+                        <option value="M7">Máquina 7</option>
+                    </select>
+                </div>
+                <button id="btnFiltrar" style="width:auto; padding:10px 25px; background: var(--primary); color: white; border: none; border-radius: 8px; cursor: pointer;">📊 ANALIZAR</button>
+            </div>
+
+            <div class="rendimiento-grid">
+                <div class="kpi-tecnico"><span>Copias Brutas</span><h2 id="kpiBruta">0</h2></div>
+                <div class="kpi-tecnico" style="border-top-color: var(--danger);"><span>Costo Operativo</span><h2 id="kpiCostoReal">$ 0</h2></div>
+                <div class="kpi-tecnico" style="border-top-color: var(--primary);"><span>Producción Neta</span><h2 id="kpiProdNeta">0</h2></div>
+                <div class="kpi-tecnico" style="border-top-color: var(--success);"><span>Ingreso Teórico</span><h2 id="kpiIngresoTeorico">$ 0</h2></div>
+                <div class="kpi-tecnico"><span>Producción Hojas</span><h2 id="kpiHojas">0</h2></div>
+                <div class="kpi-tecnico" style="border-top-color: #3498db;"><span>Eficiencia Papel</span><h2 id="kpiEficiencia">0%</h2></div>
+            </div>
+
+            <div class="chart-row">
+                <div class="chart-box">
+                    <h3 style="margin-top:0;">📊 Utilización por Máquina</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="chartUtilizacion"></canvas>
+                    </div>
+                </div>
+                <div class="chart-box">
+                    <h3 style="margin-top:0;">📉 Distribución de Carga</h3>
+                    <div class="canvas-wrapper">
+                        <canvas id="chartDistribucion"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <h3 id="tituloAlertas" style="display:none; color: var(--danger);">⚠️ Alertas de Mantenimiento Requerido</h3>
+            <div id="contenedorAlertas"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { cargarSidebar } from './sidebar.js';
+        try { cargarSidebar('rendimiento'); } catch(e) { console.error(e); }
+    </script>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { collection, query, getDocs, doc, getDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import './auth-timeout.js';
+
+        let costoPasadaInsumo = 1;
+        let precioVentaDobleFaz = 1;
+        let limiteMantenimiento = 50000;
+        let chartUtil, chartDist;
+        verificarAcceso([, 'administrador', 'superusuario']).then(() => {
+            cargarSidebar('rendimiento');
+            cargarConfig();
+        }).catch(err => {
+            console.error("Acceso denegado:", err);
+            window.location.href = "index.html";
+        });
+
+        const hoy = new Date();
+        const hoyString = hoy.toISOString().split('T')[0];
+        document.getElementById('fechaHasta').value = hoyString;
+        document.getElementById('fechaDesde').value = hoyString; 
+
+        async function inicializar() {
+            try {
+                const snapConf = await getDoc(doc(db, "configuracion", "global"));
+                if (snapConf.exists()) {
+                    const data = snapConf.data();
+                    costoPasadaInsumo = data.costo_pasada || 1;
+                    precioVentaDobleFaz = data.doble_faz || 1;
+                    limiteMantenimiento = data.limite_mantenimiento || 50000;
+                }
+            } catch (e) { console.error("Error cargando config:", e); }
+            ejecutarAnalisis();
+        }
+
+        async function ejecutarAnalisis() {
+            const desdeStr = document.getElementById('fechaDesde').value;
+            const hastaStr = document.getElementById('fechaHasta').value;
+            if (!desdeStr || !hastaStr) return;
+
+            const desde = new Date(desdeStr + "T00:00:00");
+            const hasta = new Date(hastaStr + "T23:59:59");
+            const maquinaFiltro = document.getElementById('filtroMaquina').value;
+
+            try {
+
+                const [snapL, snapNC, snapI] = await Promise.all([
+                    getDocs(collection(db, "lecturas_maquinas")),
+                    getDocs(collection(db, "no_cobradas")),
+                    getDocs(collection(db, "insumos"))
+                ]);
+
+                let totalConsumoBruto = 0, totalNoCobradasPesos = 0, totalHojasCompradas = 0;
+                let dataPorMaquina = {};
+                let todasLasLecturasParaAlertas = []; 
+
+
+                snapL.forEach(doc => {
+                    const d = doc.data();
+                    let fechaDoc;
+                    if (d.fecha && typeof d.fecha.toDate === 'function') {
+                        fechaDoc = d.fecha.toDate();
+                    } else if (typeof d.fecha === 'string') {
+                        fechaDoc = new Date(d.fecha.includes('T') ? d.fecha : d.fecha + "T12:00:00");
+                    }
+
+
+                    todasLasLecturasParaAlertas.push({ maquina: d.maquina, consumo: parseFloat(d.consumo) || 0, fecha: fechaDoc });
+
+
+                    if (fechaDoc >= desde && fechaDoc <= hasta) {
+                        if (maquinaFiltro === "todas" || d.maquina === maquinaFiltro) {
+                            const cons = parseFloat(d.consumo) || 0;
+                            totalConsumoBruto += cons;
+                            dataPorMaquina[d.maquina] = (dataPorMaquina[d.maquina] || 0) + cons;
+                        }
+                    }
+                });
+
+
+                snapNC.forEach(doc => {
+                    const d = doc.data();
+                    let fechaNC = (d.fecha && typeof d.fecha.toDate === 'function') ? d.fecha.toDate() : new Date(d.fecha + "T12:00:00");
+                    if (fechaNC >= desde && fechaNC <= hasta) {
+                        totalNoCobradasPesos += (d.beca_apuntes || 0) + (d.cece || 0) + (d.copias_internas_becados || 0) + 
+                                                (d.copias_originales || 0) + (d.descartes || 0) + (d.descartes_tecnicos || 0) + (d.stock_apuntes || 0);
+                    }
+                });
+
+
+                snapI.forEach(doc => {
+                    const d = doc.data();
+                    let fechaI = (d.fecha && typeof d.fecha.toDate === 'function') ? d.fecha.toDate() : new Date(d.fecha + "T12:00:00");
+                    if (fechaI >= desde && fechaI <= hasta) {
+                        if (d.categoria === "papel") totalHojasCompradas += (d.cantidad || 0) * 500;
+                    }
+                });
+
+
+                const cantNoCobradas = totalNoCobradasPesos / precioVentaDobleFaz;
+                const prodNeta = totalConsumoBruto - cantNoCobradas;
+                const costoRealMaq = totalConsumoBruto * costoPasadaInsumo;
+                const ingresoTeorico = prodNeta * precioVentaDobleFaz;
+                const prodHojas = prodNeta / 2;
+                const eficiencia = totalHojasCompradas > 0 ? (prodHojas / totalHojasCompradas) * 100 : 0;
+
+
+                document.getElementById('kpiBruta').innerText = Math.round(totalConsumoBruto).toLocaleString();
+                document.getElementById('kpiCostoReal').innerText = `$ ${Math.round(costoRealMaq).toLocaleString()}`;
+                document.getElementById('kpiProdNeta').innerText = Math.round(prodNeta).toLocaleString();
+                document.getElementById('kpiIngresoTeorico').innerText = `$ ${Math.round(ingresoTeorico).toLocaleString()}`;
+                document.getElementById('kpiHojas').innerText = Math.round(prodHojas).toLocaleString();
+                document.getElementById('kpiEficiencia').innerText = `${eficiencia.toFixed(1)}%`;
+
+                renderizarGraficos(dataPorMaquina);
+                
+
+                generarAlertasConReset(todasLasLecturasParaAlertas, snapI);
+
+            } catch (err) { console.error("Error en análisis:", err); }
+        }
+
+        async function generarAlertasConReset(todasLasLecturas, snapInsumos) {
+            const container = document.getElementById('contenedorAlertas');
+            const titulo = document.getElementById('tituloAlertas');
+            container.innerHTML = "";
+            let hayAlertas = false;
+
+            let ultimosMantenimientos = {};
+            
+
+            snapInsumos.forEach(doc => {
+                const d = doc.data();
+                if (d.categoria && d.categoria.toLowerCase() === "mantenimiento" && d.maquina) {
+                    let fechaM;
+                    if (d.fecha && typeof d.fecha.toDate === 'function') {
+                        fechaM = d.fecha.toDate();
+                    } else {
+  
+                        fechaM = new Date(d.fecha.includes('T') ? d.fecha : d.fecha + "T23:59:59");
+                    }
+
+                    if (!ultimosMantenimientos[d.maquina] || fechaM > ultimosMantenimientos[d.maquina]) {
+                        ultimosMantenimientos[d.maquina] = fechaM;
+                    }
+                }
+            });
+
+
+            let desgastePostService = {};
+            todasLasLecturas.forEach(l => {
+                const fechaCorte = ultimosMantenimientos[l.maquina] || new Date(0);
+                if (l.fecha.getTime() > fechaCorte.getTime()) {
+                    desgastePostService[l.maquina] = (desgastePostService[l.maquina] || 0) + l.consumo;
+                }
+            });
+
+            const listaMaquinas = ["M1", "M2", "M3", "M4", "M5", "M6", "M7"];
+            listaMaquinas.forEach(maq => {
+                const acumulado = desgastePostService[maq] || 0;
+                if (acumulado >= (limiteMantenimiento * 0.9)) {
+                    hayAlertas = true;
+                    const resto = limiteMantenimiento - acumulado;
+                    const fechaS = ultimosMantenimientos[maq];
+                    
+                    container.innerHTML += `
+                        <div class="alert-card" style="border-left-color: ${resto <= 0 ? '#e74c3c' : '#f39c12'}">
+                            <div>
+                                <strong>${maq}</strong>: Próximo Service Necesario<br>
+                                <small>Acumulado post-service: ${Math.round(acumulado).toLocaleString()} / Límite: ${limiteMantenimiento.toLocaleString()}</small>
+                                ${fechaS ? `<br><small style="color:var(--secondary)">Último mantenimiento: ${fechaS.toLocaleDateString()}</small>` : ''}
+                            </div>
+                            <span style="font-weight:bold">${resto <= 0 ? '¡VENCIDO!' : 'Faltan ' + Math.round(resto).toLocaleString()}</span>
+                        </div>`;
+                }
+            });
+
+            titulo.style.display = hayAlertas ? 'block' : 'none';
+        }
+
+        function renderizarGraficos(dict) {
+            if (chartUtil) chartUtil.destroy();
+            if (chartDist) chartDist.destroy();
+            const labels = Object.keys(dict);
+            const values = Object.values(dict);
+            const opts = { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom' } } };
+            chartUtil = new Chart(document.getElementById('chartUtilizacion'), {
+                type: 'bar',
+                data: { labels, datasets: [{ label: 'Copias Brutas (Contador)', data: values, backgroundColor: '#2c3e50' }] },
+                options: opts
+            });
+            chartDist = new Chart(document.getElementById('chartDistribucion'), {
+                type: 'pie',
+                data: { labels, datasets: [{ data: values, backgroundColor: ['#a4155b', '#2c3e50', '#7f8c8d', '#e74c3c', '#28a745', '#f1c40f', '#3498db'] }] },
+                options: opts
+            });
+        }
+
+        document.getElementById('btnFiltrar').onclick = ejecutarAnalisis;
+        auth.onAuthStateChanged(user => { if(user) inicializar(); });
+    </script>
+</body>
+</html>

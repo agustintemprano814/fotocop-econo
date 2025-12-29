@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fotocop-Econo | Cierre de Jornada</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <style>
+        :root {
+            --bg-caja: #f0fff4;
+            --bg-hojas: #fff5f5;
+        }
+
+        .header-reporte {
+            display: flex;
+            justify-content: space-between;
+            align-items: center; 
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 20px;
+            margin-bottom: 30px;
+        }
+
+        .titulo-grupo h2 {
+            margin: 0;
+            font-size: 1.6rem; 
+            color: var(--secondary);
+            border: none;
+            padding: 0;
+        }
+
+        .titulo-grupo p {
+            margin: 4px 0 0 0;
+            font-size: 0.9rem;
+            color: var(--primary);
+            font-weight: bold;
+        }
+        .btn-imprimir-mini {
+            background: white !important; 
+            color: #475569 !important;
+            border: 1px solid #cbd5e1 !important;
+            padding: 6px 12px !important; 
+            border-radius: 6px !important;
+            font-size: 0.8rem !important;
+            font-weight: 600 !important;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            width: auto !important;
+            height: fit-content;
+            transition: all 0.2s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+
+        .btn-imprimir-mini:hover {
+            background: #f8fafc !important;
+            border-color: var(--primary) !important;
+            color: var(--primary) !important;
+        }
+
+        .section-header-cierre {
+            background: var(--primary);
+            color: white;
+            padding: 12px 20px;
+            border-radius: 8px;
+            margin: 30px 0 20px 0;
+            font-size: 1.1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .grid-maquinas {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 15px;
+        }
+
+        .maquina-card {
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+        }
+
+        .maquina-card h4 {
+            margin: 0 0 10px 0;
+            color: var(--secondary);
+            font-size: 0.85rem;
+            text-transform: uppercase;
+        }
+
+        .input-group-cierre {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .input-group-cierre label {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #64748b;
+        }
+
+        input[type="number"] {
+            padding: 8px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .total-box-resaltado {
+            margin-top: 20px;
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        .total-caja { background: var(--bg-caja); border: 1px solid #c6f6d5; color: #276749; }
+        .total-hojas { background: var(--bg-hojas); border: 1px solid #fed7d7; color: #9b2c2c; }
+
+        .btn-save-cierre {
+            width: 100%;
+            padding: 16px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            margin-top: 30px;
+        }
+
+        @media print {
+            .sidebar, .btn-imprimir-mini, .btn-save-cierre, .header-info { display: none !important; }
+            .main-content { margin: 0; padding: 0; }
+            .container { box-shadow: none; max-width: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="header-info" style="text-align: right; padding: 10px; color: #94a3b8; font-size: 0.8rem;">
+            👤 <span id="displayUser">Cargando...</span>
+        </div>
+
+        <div class="container">
+            <div class="header-reporte">
+                <div class="titulo-grupo">
+                    <h2>Cierre de Jornada</h2>
+                    <p id="fechaActual"></p>
+                </div>
+                <button type="button" class="btn-imprimir-mini" onclick="window.print()">
+                    🖨️ Imprimir
+                </button>
+            </div>
+
+            <form id="formCierreCompleto">
+                <div class="section-header-cierre">🔢 Contadores de Máquinas</div>
+                <div class="grid-maquinas" id="contenedorMaquinas"></div>
+
+                <div class="section-header-cierre">💰 Ingresos y Gastos de Caja</div>
+                <div class="grid-maquinas">
+                    <div class="maquina-card">
+                        <h4 style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">💵 Caja</h4>
+                        <div class="input-group-cierre">
+                            <label>Efectivo ($):</label>
+                            <input type="number" id="ingEfectivo" class="calc" value="0">
+                        </div>
+                        <div class="input-group-cierre" style="margin-top:12px">
+                            <label>Transferencias ($):</label>
+                            <input type="number" id="ingTransf" class="calc" value="0">
+                        </div>
+                        <div class="input-group-cierre" style="margin-top:12px">
+                            <label>Gastos ($):</label>
+                            <input type="number" id="gastosDia" class="calc" value="0">
+                        </div>
+                    </div>
+                    
+                    <div class="maquina-card" style="border-left: 4px solid var(--primary);">
+                        <h4 style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">📦 Ventas Directas</h4>
+                        <div class="input-group-cierre">
+                            <label>Stock Librería ($):</label>
+                            <input type="number" id="vtaStock" class="calc" value="0">
+                        </div>
+                        <div class="input-group-cierre" style="margin-top:12px">
+                            <label>Copia Rápida ($):</label>
+                            <input type="number" id="vtaRapida" class="calc" value="0">
+                        </div>
+                        <div style="margin-top: 20px; padding: 8px; background: #fffaf0; border-radius: 6px; border: 1px solid #feebc8; text-align: center;">
+                            <small style="color: #9c4221; font-weight: 700; font-size: 0.7rem;">SUBTOTAL:</small>
+                            <div id="subtotalVentasDirectas" style="font-size: 1.1rem; font-weight: 800; color: #9c4221;">$ 0</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="total-box-resaltado total-caja">
+                    <span>Total en Caja :</span>
+                    <span id="totalCajaNeto">$ 0</span>
+                </div>
+
+                <div class="section-header-cierre">📄 Copias No Cobrada</div>
+                <div class="grid-maquinas">
+                    <div class="maquina-card">
+                        <label style="font-size: 0.7rem; font-weight: 700;">C.E.C.E</label>
+                        <input type="number" class="nc" id="cece" value="0">
+                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Apuntes</label>
+                        <input type="number" class="nc" id="stockNC" value="0">
+                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Becas</label>
+                        <input type="number" class="nc" id="beca" value="0">
+                    </div>
+                    <div class="maquina-card">
+                        <label style="font-size: 0.7rem; font-weight: 700;">Internas</label>
+                        <input type="number" class="nc" id="internas" value="0">
+                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Originales</label>
+                        <input type="number" class="nc" id="originales" value="0">
+                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Descartes</label>
+                        <input type="number" class="nc" id="descartes" value="0">
+                    </div>
+                </div>
+
+                <div class="total-box-resaltado total-hojas">
+                    <span>Total No Cobradas:</span>
+                    <span id="totalNC">0</span>
+                </div>
+
+                <button type="submit" class="btn-save-cierre">💾 GUARDAR CIERRE</button>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        import { auth, db } from './firebase-config.js';
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { verificarAcceso } from './security.js';
+        import { cargarSidebar } from './sidebar.js';
+        import './auth-timeout.js';
+
+        verificarAcceso(['supervisor','superusuario']).then(() => {
+            cargarSidebar('cierre');
+        });
+
+        document.getElementById('fechaActual').innerText = new Date().toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+        const cont = document.getElementById('contenedorMaquinas');
+        for(let i=1; i<=7; i++) {
+            cont.innerHTML += `
+            <div class="maquina-card">
+                <h4>Máquina ${i}</h4>
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
+                    <div class="input-group-cierre"><label>Inicio</label><input type="number" id="m${i}_i" value="0"></div>
+                    <div class="input-group-cierre"><label>Cierre</label><input type="number" id="m${i}_c" value="0"></div>
+                </div>
+            </div>`;
+        }
+
+        document.addEventListener('input', () => {
+            const e = Number(document.getElementById('ingEfectivo').value);
+            const t = Number(document.getElementById('ingTransf').value);
+            const g = Number(document.getElementById('gastosDia').value);
+            const s = Number(document.getElementById('vtaStock').value);
+            const r = Number(document.getElementById('vtaRapida').value);
+            
+            document.getElementById('subtotalVentasDirectas').innerText = `$ ${s + r}`;
+            document.getElementById('totalCajaNeto').innerText = `$ ${e + t - g}`;
+
+            let tNC = 0;
+            document.querySelectorAll('.nc').forEach(i => tNC += Number(i.value));
+            document.getElementById('totalNC').innerText = tNC;
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) document.getElementById('displayUser').innerText = user.email;
+        });
+
+        document.getElementById('formCierreCompleto').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = e.target.querySelector('button[type="submit"]');
+            btn.disabled = true;
+            btn.innerText = "⏳ Guardando...";
+
+            try {
+                const maquinas = {};
+                for(let i=1; i<=7; i++) {
+                    maquinas[`m${i}`] = { 
+                        inicio: Number(document.getElementById(`m${i}_i`).value), 
+                        cierre: Number(document.getElementById(`m${i}_c`).value) 
+                    };
+                }
+
+                await addDoc(collection(db, "cierres"), {
+                    supervisor: auth.currentUser.email,
+                    fecha: serverTimestamp(),
+                    maquinas,
+                    caja: { 
+                        efectivo: Number(document.getElementById('ingEfectivo').value), 
+                        transferencia: Number(document.getElementById('ingTransf').value), 
+                        gastos: Number(document.getElementById('gastosDia').value),
+                        venta_stock: Number(document.getElementById('vtaStock').value),
+                        copia_rapida: Number(document.getElementById('vtaRapida').value),
+                        total_neto: Number(document.getElementById('totalCajaNeto').innerText.replace('$ ', ''))
+                    },
+                    no_cobradas: {
+                        cece: Number(document.getElementById('cece').value),
+                        stock: Number(document.getElementById('stockNC').value),
+                        beca: Number(document.getElementById('beca').value),
+                        internas: Number(document.getElementById('internas').value),
+                        originales: Number(document.getElementById('originales').value),
+                        descartes: Number(document.getElementById('descartes').value),
+                        total: Number(document.getElementById('totalNC').innerText)
+                    }
+                });
+
+                alert("✅ Cierre guardado.");
+                location.reload();
+            } catch (err) { 
+                alert("❌ Error: " + err.message); 
+                btn.disabled = false;
+                btn.innerText = "💾 GUARDAR CIERRE";
+            }
+        };
+    </script>
+</body>
+</html>

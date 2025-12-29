@@ -1,0 +1,228 @@
+
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --primary: #a4155b;
+    --primary-hover: #820f48;
+    --secondary: #2c3e50;
+    --dark: #1a1a1b;
+    --light: #f4f7f6;
+    --gray: #7f8c8d;
+    --danger: #e74c3c;
+    --success: #28a745;
+    --white-trans: rgba(255, 255, 255, 0.97);
+}
+
+
+body {
+    font-family: 'Segoe UI', Roboto, sans-serif;
+    margin: 0;
+    display: flex;
+    min-height: 100vh;
+    background-image: linear-gradient(rgba(255,255,255,0.4), rgba(255,255,255,0.4)),
+                      url('https://media.0221.com.ar/adjuntos/357/migration/0221/092018/1536004803791.jpg');
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    background-repeat: no-repeat;
+    image-rendering: -webkit-optimize-contrast;
+}
+
+
+.logo-container {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px auto;
+    border-radius: 50%;
+    border: 4px solid var(--primary);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.logo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+}
+
+
+.sidebar {
+    width: 60px;
+    height: 100vh;
+    background: var(--dark);
+    color: white;
+    transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    overflow: hidden;
+    position: fixed;
+    z-index: 100;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+}
+
+.sidebar:hover { width: 200px; }
+
+.sidebar-logo-container {
+    display: flex;
+    align-items: center;
+    padding: 20px 12px;
+    height: 80px;
+    overflow: hidden;
+}
+
+.logo-circle-wrapper {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 2px solid var(--primary);
+    background: white;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: transform 0.3s ease;
+}
+
+.logo-circle-wrapper img {
+    height: 100%; 
+    width: 100%;
+    object-fit: cover;
+}
+
+.logo-text {
+    margin-left: 15px;
+    font-weight: bold;
+    color: white;
+    font-size: 1.1rem;
+    white-space: nowrap;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.sidebar:hover .logo-text { opacity: 1; }
+
+.sidebar-item {
+    padding: 18px 20px;
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.sidebar-item:hover { background: var(--primary); color: white; }
+.sidebar-item span { margin-left: 20px; opacity: 0; transition: opacity 0.3s; }
+.sidebar:hover .sidebar-item span { opacity: 1; }
+
+.active {
+    border-left: 5px solid var(--primary);
+    background: rgba(164, 21, 91, 0.15);
+    color: var(--primary);
+}
+
+
+.main-content {
+    flex-grow: 1;
+    margin-left: 60px;
+    padding: 40px;
+    transition: margin-left 0.3s;
+}
+
+.container {
+    max-width: 900px;
+    margin: auto;
+    background: var(--white-trans);
+    padding: 2.5rem;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.4);
+}
+
+h2 { color: var(--primary); border-bottom: 2px solid var(--primary); padding-bottom: 10px; }
+
+
+.form-group { margin-bottom: 20px; }
+label { display: block; margin-bottom: 8px; font-weight: 600; color: var(--secondary); font-size: 14px; }
+
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid #ccd1d1;
+    border-radius: 8px;
+    background: white;
+    transition: border-color 0.3s;
+    font-size: 14px;
+}
+
+button {
+    width: 100%;
+    padding: 14px;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 16px;
+    background-color: var(--primary);
+    color: white;
+    transition: all 0.3s;
+}
+
+button:hover {
+    background-color: var(--primary-hover);
+    transform: translateY(-1px);
+}
+
+
+.grid-estado { 
+    display: grid; 
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); 
+    gap: 25px; 
+}
+
+.card-maquina { 
+    background: white; 
+    padding: 25px; 
+    border-radius: 15px; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+    border-top: 6px solid #ccc;
+}
+
+.card-maquina.online { border-top-color: #28a745; }
+.card-maquina.offline { border-top-color: #dc3545; }
+
+
+.toast-notification {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: #1a1a1b;
+    color: white;
+    padding: 12px 25px;
+    border-radius: 8px;
+    z-index: 10000;
+    border-left: 5px solid var(--primary);
+    transform: translateX(150%);
+    transition: transform 0.4s ease;
+}
+
+.toast-notification.show { transform: translateX(0); }
+
+.sidebar-item.item-locked {
+    opacity: 0.35;
+    filter: grayscale(1);
+    cursor: not-allowed;
+}
+
+@media print {
+    .sidebar, button, .filter-bar, .edit-zone { display: none !important; }
+    .main-content { margin-left: 0 !important; }
+    .container { box-shadow: none !important; border: none !important; }
+}

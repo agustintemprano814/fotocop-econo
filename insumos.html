@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Insumos y Mantenimiento | Fotocop-Econo</title>
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .history-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 25px;
+        }
+
+        .history-card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            border-left: 5px solid var(--primary);
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            transition: transform 0.2s;
+            position: relative;
+        }
+
+        .history-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.1);
+        }
+
+        .filter-container-centered {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 50px;
+            border: 1px solid #eee;
+            margin: 30px auto;
+            max-width: 600px;
+            gap: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03);
+        }
+
+        .filter-container-centered input[type="date"] {
+            border: 1px solid #ddd;
+            padding: 8px 12px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            outline: none;
+            color: var(--dark);
+        }
+
+        .filter-container-centered button {
+            background: var(--dark);
+            color: white;
+            border: none;
+            padding: 8px 25px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 0.8rem;
+            transition: background 0.3s;
+        }
+
+        .card-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; }
+        .card-date { font-size: 0.85rem; color: var(--gray); font-weight: 600; }
+        .card-category { background: rgba(164, 21, 91, 0.1); color: var(--primary); padding: 4px 10px; border-radius: 20px; font-size: 0.75rem; font-weight: bold; text-transform: uppercase; }
+        .card-title { font-size: 1.1rem; font-weight: bold; color: var(--dark); margin: 0; }
+        .card-stats { display: flex; gap: 20px; margin-top: 10px; padding-top: 10px; border-top: 1px dashed #eee; }
+        .stat-item { display: flex; flex-direction: column; }
+        .stat-label { font-size: 0.7rem; color: var(--gray); text-transform: uppercase; }
+        .stat-value { font-weight: bold; color: var(--secondary); font-size: 1rem; }
+        .card-footer { margin-top: 12px; font-style: italic; color: #666; font-size: 0.85rem; background: #f9f9f9; padding: 8px; border-radius: 6px; overflow-wrap: break-word; }
+
+        .cat-mantenimiento { border-left-color: #f39c12; }
+        .cat-tonner { border-left-color: #3498db; }
+        .cat-repuestos { border-left-color: #9b59b6; }
+        .cat-papel { border-left-color: #2ecc71; }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <h2 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px;">📦 Gestión de Insumos</h2>
+
+            <div class="admin-card">
+                <h3 class="section-title">Registrar Nueva Adquisición / Tarea</h3>
+                <form id="formInsumos">
+                    <div class="grid-maquinas">
+                        <div class="form-group">
+                            <label>Categoría:</label>
+                            <select id="categoriaInsumo" required>
+                                <option value="papel">📄 Papel (Resmas)</option>
+                                <option value="tonner">🧪 Tóner</option>
+                                <option value="repuestos">⚙️ Repuestos</option>
+                                <option value="mantenimiento">🛠️ Mantenimiento Técnico</option>
+                                <option value="otros">➕ Otros</option>
+                            </select>
+                        </div>
+
+                        <div class="form-group" id="contenedorDinamico">
+                            <label id="labelDinamico">Cantidad:</label>
+                            <div id="inputPlaceholder">
+                                <input type="number" id="cantidadInsumo" required min="1" value="1">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Costo Total ($):</label>
+                            <input type="number" id="costoInsumo" required min="0" step="0.01" placeholder="0.00">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="grupoOtro" style="display: none; margin-top: 15px;">
+                        <label>Especifique qué es:</label>
+                        <input type="text" id="detalleOtro" placeholder="Ej: Librería...">
+                    </div>
+
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label>Notas adicionales:</label>
+                        <input type="text" id="notasInsumo" placeholder="Marca, proveedor, número de factura...">
+                    </div>
+
+                    <button type="submit" id="btnGuardar" style="background: var(--primary); margin-top: 10px;">REGISTRAR EN HISTORIAL</button>
+                </form>
+            </div>
+
+            <div class="filter-container-centered">
+                <input type="date" id="filtroDesde">
+                <span style="color: #bbb; font-weight: bold;">➔</span>
+                <input type="date" id="filtroHasta">
+                <button id="btnFiltrarInsumos">APLICAR FILTRO</button>
+            </div>
+
+            <h3 class="section-title" style="text-align: center; margin-top: 40px;">Historial de Insumos</h3>
+            <div id="historialContenedor" class="history-grid"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { collection, addDoc, query, where, getDocs, orderBy, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { verificarAcceso } from './security.js';
+        import { cargarSidebar } from './sidebar.js';
+
+        // --- FUNCIÓN DE SEGURIDAD (ANTI-XSS) ---
+        function sanitizar(texto) {
+            if (!texto) return "";
+            const temp = document.createElement('div');
+            temp.textContent = texto;
+            return temp.innerHTML; // Convierte <script> en texto inofensivo
+        }
+
+        const selectCat = document.getElementById('categoriaInsumo');
+        const grupoOtro = document.getElementById('grupoOtro');
+        const labelDinamico = document.getElementById('labelDinamico');
+        const inputPlaceholder = document.getElementById('inputPlaceholder');
+        const contenedor = document.getElementById('historialContenedor');
+
+        // Bloque de acceso
+        verificarAcceso(['supervisor', 'administrador', 'superusuario', 'operario']).then(() => {
+            cargarSidebar('insumos');
+            inicializarFechas();
+            cargarHistorial();
+        }).catch(err => {
+            window.location.href = "index.html";
+        });
+
+        function inicializarFechas() {
+            const hoy = new Date();
+            const mesAtras = new Date();
+            mesAtras.setMonth(hoy.getMonth() - 1);
+            document.getElementById('filtroHasta').value = hoy.toISOString().split('T')[0];
+            document.getElementById('filtroDesde').value = mesAtras.toISOString().split('T')[0];
+        }
+
+        selectCat.onchange = () => {
+            grupoOtro.style.display = (selectCat.value === 'otros') ? 'block' : 'none';
+            if (selectCat.value === 'mantenimiento') {
+                labelDinamico.innerText = "Máquina intervenida:";
+                inputPlaceholder.innerHTML = `
+                    <select id="maquinaInsumo" required>
+                        <option value="M1">Máquina 1</option>
+                        <option value="M2">Máquina 2</option>
+                        <option value="M3">Máquina 3</option>
+                        <option value="M4">Máquina 4</option>
+                        <option value="M5">Máquina 5</option>
+                        <option value="M6">Máquina 6</option>
+                        <option value="M7">Máquina 7</option>
+                    </select>`;
+            } else {
+                labelDinamico.innerText = "Cantidad:";
+                inputPlaceholder.innerHTML = `<input type="number" id="cantidadInsumo" required min="1" value="1">`;
+            }
+        };
+
+        document.getElementById('formInsumos').onsubmit = async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btnGuardar');
+            btn.disabled = true;
+
+            const esMantenimiento = selectCat.value === 'mantenimiento';
+            
+            // ESCUDO: Sanitizamos antes de guardar
+            const data = {
+                fecha: new Date().toISOString().split('T')[0],
+                timestamp: serverTimestamp(),
+                categoria: selectCat.value,
+                detalle: selectCat.value === 'otros' ? sanitizar(document.getElementById('detalleOtro').value) : '',
+                cantidad: esMantenimiento ? 1 : Number(document.getElementById('cantidadInsumo').value),
+                maquina: esMantenimiento ? document.getElementById('maquinaInsumo').value : '',
+                costo: Number(document.getElementById('costoInsumo').value),
+                notas: sanitizar(document.getElementById('notasInsumo').value),
+                usuario: auth.currentUser.email
+            };
+
+            try {
+                await addDoc(collection(db, "insumos"), data);
+                alert("✅ Registro guardado con éxito.");
+                e.target.reset();
+                selectCat.dispatchEvent(new Event('change'));
+                cargarHistorial();
+            } catch (err) {
+                alert("Error al guardar: " + err.message);
+            } finally {
+                btn.disabled = false;
+            }
+        };
+
+        async function cargarHistorial() {
+            const desde = document.getElementById('filtroDesde').value;
+            const hasta = document.getElementById('filtroHasta').value;
+            if(!desde || !hasta) return;
+
+            contenedor.innerHTML = '<p style="grid-column: 1/-1; text-align: center;">Cargando historial seguro...</p>';
+
+            try {
+                const q = query(
+                    collection(db, "insumos"),
+                    where("fecha", ">=", desde),
+                    where("fecha", "<=", hasta),
+                    orderBy("fecha", "desc")
+                );
+
+                const querySnapshot = await getDocs(q);
+                contenedor.innerHTML = '';
+
+                querySnapshot.forEach((doc) => {
+                    const item = doc.data();
+                    const catClass = `cat-${item.categoria}`;
+                    const icono = { papel:'📄', tonner:'🧪', repuestos:'⚙️', mantenimiento:'🛠️', otros:'➕' }[item.categoria] || '📦';
+
+                    let sLabel = "Cantidad";
+                    let sValue = item.cantidad;
+                    if (item.categoria === 'mantenimiento') {
+                        sLabel = "Máquina";
+                        sValue = item.maquina || "N/A";
+                    }
+
+                    // ESCUDO: Sanitizamos al mostrar (por si hay basura vieja en la DB)
+                    const titulo = item.categoria === 'otros' ? sanitizar(item.detalle) : item.categoria.toUpperCase();
+                    const notas = sanitizar(item.notas) || 'Sin observaciones';
+
+                    contenedor.innerHTML += `
+                        <div class="history-card ${catClass}">
+                            <div class="card-header">
+                                <span class="card-date">${item.fecha}</span>
+                                <span class="card-category">${item.categoria}</span>
+                            </div>
+                            <div class="card-main">
+                                <p class="card-title">${icono} ${titulo}</p>
+                            </div>
+                            <div class="card-stats">
+                                <div class="stat-item">
+                                    <span class="stat-label">${sLabel}</span>
+                                    <span class="stat-value">${sValue}</span>
+                                </div>
+                                <div class="stat-item">
+                                    <span class="stat-label">Costo</span>
+                                    <span class="stat-value">$${Number(item.costo).toLocaleString('es-AR')}</span>
+                                </div>
+                            </div>
+                            <div class="card-footer">
+                                <strong>Nota:</strong> ${notas}
+                            </div>
+                        </div>`;
+                });
+
+                if (querySnapshot.empty) {
+                    contenedor.innerHTML = '<p style="grid-column: 1/-1; text-align: center; padding: 40px; color: #999;">No hay registros en este rango.</p>';
+                }
+            } catch (error) {
+                console.error(error);
+                contenedor.innerHTML = '<p style="grid-column: 1/-1; text-align: center; color: red;">Error de conexión o cuota diaria excedida.</p>';
+            }
+        }
+
+        document.getElementById('btnFiltrarInsumos').onclick = cargarHistorial;
+    </script>
+</body>
+</html>

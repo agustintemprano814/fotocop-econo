@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fotocopiadora Económicas UNLP | Acceso</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <link rel="apple-touch-icon" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <style>
+        body.login-body { 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            display: flex; 
+            background-color: var(--dark);
+            margin: 0;
+        }
+        .login-card { 
+            background: var(--white-trans); 
+            padding: 2.5rem; 
+            border-radius: 15px; 
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3); 
+            width: 100%; 
+            max-width: 380px; 
+            backdrop-filter: blur(10px);
+        }
+    </style>
+</head>
+<body class="login-body"> 
+    <div class="login-card">
+        <div style="text-align: center; margin-bottom: 20px;">
+            <div class="logo-container">
+                <img src="https://linktr.ee/og/image/franjaeconounlp.jpg" alt="Logo">
+            </div>
+        </div>
+        
+        <h2 style="text-align: center; color: var(--primary); margin-top: 0; font-size: 1.5rem;">Fotocopiadora Económicas</h2>
+        <p style="text-align: center; color: var(--secondary); font-weight: bold; font-size: 13px; margin-bottom: 5px; letter-spacing: 1px;">FRANJA MORADA</p>
+        <p style="text-align: center; color: #666; font-size: 12px; margin-bottom: 25px;">Centro de Estudiantes de Cs. Económicas</p>
+        
+        <form id="loginForm">
+            <div class="form-group">
+                <label>Correo Electrónico:</label>
+                <input type="email" id="usuario" placeholder="usuario@correo.com" required>
+            </div>
+            <div class="form-group">
+                <label>Contraseña:</label>
+                <input type="password" id="password" placeholder="••••••••" required>
+            </div>
+            <button type="submit" style="background-color: var(--primary); color: white; margin-top: 10px;">Entrar al Sistema</button>
+        </form>
+        
+        <div id="mensaje" style="margin-top: 20px; text-align: center; font-size: 14px; font-weight: bold; min-height: 20px;"></div>
+    </div>
+
+    <script type="module">
+    import { auth, db } from './firebase-config.js';
+    import { setPersistence, browserSessionPersistence, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+
+    const loginForm = document.getElementById('loginForm');
+    const mensaje = document.getElementById('mensaje');
+
+
+    window.onload = async () => {
+        await auth.signOut();
+        console.log("Estado de sesión limpiado al cargar login.");
+    };
+
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('reason') === 'timeout') {
+        mensaje.style.color = "orange";
+        mensaje.innerText = "⏳ Sesión cerrada por inactividad.";
+    }
+
+    loginForm.onsubmit = async (e) => {
+        e.preventDefault();
+        mensaje.style.color = "var(--secondary)";
+        mensaje.innerText = "⏳ Verificando identidad...";
+
+        const email = document.getElementById('usuario').value.trim().toLowerCase();
+        const pass = document.getElementById('password').value;
+
+        try {
+
+            await setPersistence(auth, browserSessionPersistence);
+            
+            const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+            const docSnap = await getDoc(doc(db, "usuarios", email));
+
+            if (docSnap.exists()) {
+                mensaje.style.color = "var(--success)";
+                mensaje.innerText = "✅ ¡Bienvenido! Accediendo al inicio...";
+                setTimeout(() => { window.location.href = "inicio.html"; }, 800);
+            } else {
+                await auth.signOut(); 
+                mensaje.style.color = "orange";
+                mensaje.innerText = "⚠️ El usuario no tiene un rol asignado.";
+            }
+
+        } catch (error) {
+            mensaje.style.color = "var(--danger)";
+            if (error.code === 'auth/invalid-credential') {
+                mensaje.innerText = "❌ Correo o contraseña incorrectos.";
+            } else {
+                mensaje.innerText = "❌ Error al intentar ingresar.";
+            }
+        }
+    };
+</script>
+</body>
+</html>

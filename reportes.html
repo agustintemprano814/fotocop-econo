@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Fotocop-Econo | Centro de Reportes</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+    <style>
+        .report-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .report-card {
+            background: white;
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            border-top: 5px solid var(--primary);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            transition: transform 0.2s;
+        }
+        .report-card:hover { transform: translateY(-5px); }
+
+        .report-card h3 {
+            margin: 0;
+            color: var(--secondary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .report-card p {
+            font-size: 0.9rem;
+            color: #64748b;
+            margin: 0;
+            line-height: 1.4;
+        }
+
+ 
+        .period-selector {
+            background: #f8fafc;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            align-items: center;
+            border: 1px solid #e2e8f0;
+        }
+
+        .filter-item { display: flex; flex-direction: column; gap: 5px; }
+        .filter-item label { font-size: 0.8rem; font-weight: bold; color: var(--primary); }
+        .filter-item select { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; min-width: 150px; }
+
+        .btn-download {
+            background: white;
+            color: var(--secondary);
+            border: 2px solid var(--secondary);
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            transition: all 0.3s;
+        }
+
+        .btn-download:hover {
+            background: var(--secondary);
+            color: white;
+        }
+
+        .btn-download:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container" style="max-width: 1100px;">
+            <h2 style="margin-bottom: 25px;">📊 Centro de Reportes y Exportación</h2>
+
+            <div class="period-selector">
+                <div class="filter-item">
+                    <label>Mes de Informe:</label>
+                    <select id="selectMes">
+                        <option value="0">Enero</option><option value="1">Febrero</option>
+                        <option value="2">Marzo</option><option value="3">Abril</option>
+                        <option value="4">Mayo</option><option value="5">Junio</option>
+                        <option value="6">Julio</option><option value="7">Agosto</option>
+                        <option value="8">Septiembre</option><option value="9">Octubre</option>
+                        <option value="10">Noviembre</option><option value="11">Diciembre</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Año:</label>
+                    <select id="selectAnio">
+                        <option value="2024">2024</option>
+                        <option value="2025">2025</option>
+                    </select>
+                </div>
+                <div style="flex-grow: 1; text-align: right; color: #94a3b8; font-size: 0.85rem;">
+                    Los reportes se descargan en formato Excel (.xlsx)
+                </div>
+            </div>
+
+            <div class="report-grid">
+                <div class="report-card">
+                    <h3>💰 Caja y Finanzas</h3>
+                    <p>Historial de cierres diarios, efectivo, transferencias y gastos operativos declarados por supervisión.</p>
+                    <button class="btn-download" onclick="exportarColeccion('cierres', 'Reporte_Cierres_Caja')">
+                        📥 Exportar Cierres
+                    </button>
+                </div>
+
+                <div class="report-card" style="border-top-color: var(--secondary);">
+                    <h3>🖨️ Producción Técnica</h3>
+                    <p>Detalle de contadores iniciales y finales por máquina, consumo bruto y hojas no cobradas.</p>
+                    <button class="btn-download" onclick="exportarColeccion('lecturas_maquinas', 'Reporte_Lecturas_Tecnicas')">
+                        📥 Exportar Lecturas
+                    </button>
+                </div>
+
+                <div class="report-card" style="border-top-color: #28a745;">
+                    <h3>📈 Detalle de Ventas</h3>
+                    <p>Desglose de cada ticket emitido por los operarios: Simple faz, Doble faz, Anillados y Ajustes.</p>
+                    <button class="btn-download" onclick="exportarColeccion('ventas_turnos', 'Reporte_Ventas_Turnos')">
+                        📥 Exportar Ventas
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { cargarSidebar } from './sidebar.js';
+        import { verificarAcceso } from './security.js';
+
+
+        verificarAcceso(['administrador', 'superusuario']).then(() => {
+            cargarSidebar('reportes');
+            cargarConfig();
+        }).catch(err => {
+            console.error("Acceso denegado:", err);
+            window.location.href = "index.html";
+        });
+
+        const fecha = new Date();
+        document.getElementById('selectMes').value = fecha.getMonth();
+        document.getElementById('selectAnio').value = fecha.getFullYear();
+
+
+        window.exportarColeccion = async (nombreColeccion, nombreArchivo) => {
+            const mes = parseInt(document.getElementById('selectMes').value);
+            const anio = parseInt(document.getElementById('selectAnio').value);
+            
+            const fechaInicio = new Date(anio, mes, 1);
+            const fechaFin = new Date(anio, mes + 1, 0, 23, 59, 59);
+
+            const btn = event.currentTarget;
+            btn.disabled = true;
+            btn.innerText = "⏳ Procesando...";
+
+            try {
+                const q = query(
+                    collection(db, nombreColeccion),
+                    where("fecha", ">=", fechaInicio),
+                    where("fecha", "<=", fechaFin)
+                );
+
+                const querySnapshot = await getDocs(q);
+                const datos = [];
+
+                querySnapshot.forEach((doc) => {
+                    const d = doc.data();
+
+                    const item = { ID: doc.id, ...d };
+                    if (item.fecha) item.fecha = item.fecha.toDate().toLocaleString();
+                    datos.push(item);
+                });
+
+                if (datos.length === 0) {
+                    alert("No se encontraron datos para el período seleccionado.");
+                } else {
+
+                    const worksheet = XLSX.utils.json_to_sheet(datos);
+                    const workbook = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(workbook, worksheet, "Datos");
+                    
+
+                    XLSX.writeFile(workbook, `${nombreArchivo}_${mes+1}_${anio}.xlsx`);
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error al exportar los datos.");
+            } finally {
+                btn.disabled = false;
+                btn.innerText = `📥 Exportar ${nombreArchivo.split('_')[1]}`;
+            }
+        };
+    </script>
+</body>
+</html>
