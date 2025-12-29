@@ -57,12 +57,7 @@ export async function verificarAcceso(rolesPermitidos) {
                 }
                 window.location.href = "index.html";
 
-                        // CONFIGURACIÓN DE MANTENIMIENTO
-                    const MODO_MANTENIMIENTO = true; // Cambiar a 'false' para habilitar la web
-
-                    if (MODO_MANTENIMIENTO && !window.location.href.includes('mantenimiento.html')) {
-                   window.location.href = 'mantenimiento.html';
-}
+            
             }
 
         });
