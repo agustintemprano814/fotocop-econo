@@ -144,7 +144,6 @@
         let chartUtil, chartDist;
         verificarAcceso([, 'administrador', 'superusuario']).then(() => {
             cargarSidebar('rendimiento');
-            cargarConfig();
         }).catch(err => {
             console.error("Acceso denegado:", err);
             window.location.href = "index.html";
