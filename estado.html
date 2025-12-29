@@ -151,7 +151,7 @@
 
         const container = document.getElementById('maquinasContainer');
 
-        verificarAcceso(['administrador', 'superusuario']).then(() => {
+        verificarAcceso(['supervisor','administrador', 'superusuario']).then(() => {
             cargarSidebar('estado');
             cargarConfig();
         }).catch(err => {
