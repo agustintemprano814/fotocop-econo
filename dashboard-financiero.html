@@ -150,7 +150,9 @@
     <script type="module">
         import { db, auth } from './firebase-config.js';
         import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { verificarAcceso } from './security.js';
         import './auth-timeout.js';
+        
 
         let costoPasadaGlobal = 1;
         let chartArea, chartTorta, chartBarras;
