@@ -136,6 +136,7 @@
         import { db, auth } from './firebase-config.js';
         import { collection, query, getDocs, doc, getDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import './auth-timeout.js';
+        import { verificarAcceso } from './security.js';
 
         let costoPasadaInsumo = 1;
         let precioVentaDobleFaz = 1;
