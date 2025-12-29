@@ -128,14 +128,10 @@
     </div>
 
     <script type="module">
-        import { cargarSidebar } from './sidebar.js';
-        try { cargarSidebar('rendimiento'); } catch(e) { console.error(e); }
-    </script>
-
-    <script type="module">
         import { db, auth } from './firebase-config.js';
         import { collection, query, getDocs, doc, getDoc, where } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import './auth-timeout.js';
+        import { cargarSidebar } from './sidebar.js';
         import { verificarAcceso } from './security.js';
 
         let costoPasadaInsumo = 1;
