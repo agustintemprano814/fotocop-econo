@@ -36,44 +36,62 @@ body {
     line-height: 1.6;
 }
 
-/* BARRA LATERAL (SIDEBAR) MEJORADA */
+/* --- ESTILO PARA EL LOGO CIRCULAR (LOG-IN) --- */
+.logo-container {
+    width: 120px;
+    height: 120px;
+    margin: 0 auto 20px auto;
+    border-radius: 50%;
+    border: 4px solid var(--primary);
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: white;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+
+.logo-container img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; 
+}
+
+/* BARRA LATERAL (SIDEBAR) PROFESIONAL CON SCROLL */
 .sidebar {
     width: 70px;
     height: 100vh;
     background: var(--dark);
     color: white;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    overflow: hidden;
     position: fixed;
     z-index: 1000;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; 
     box-shadow: 4px 0 15px rgba(0,0,0,0.3);
+    overflow: hidden; 
 }
 
 .sidebar:hover { width: 240px; }
 
+/* 1. Header de Sidebar (Fijo) */
 .sidebar-logo-container {
     display: flex;
     align-items: center;
     padding: 20px 17px;
     height: 80px;
+    min-height: 80px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
 }
 
 .logo-circle-wrapper {
-    width: 36px;
-    min-width: 36px;
-    height: 36px;
+    width: 36px; min-width: 36px; height: 36px;
     border-radius: 50%;
     overflow: hidden;
-    border: 2px solid var(--accent); /* Resaltamos con el amarillo del logo */
+    border: 2px solid var(--accent);
     background: white;
-    display: flex;
-    justify-content: center;
-    align-items: center;
+    display: flex; justify-content: center; align-items: center;
 }
-
 .logo-circle-wrapper img { width: 100%; height: 100%; object-fit: cover; }
 
 .logo-text {
@@ -85,8 +103,16 @@ body {
     opacity: 0;
     transition: opacity 0.3s ease;
 }
-
 .sidebar:hover .logo-text { opacity: 1; }
+
+/* 2. Contenedor de Scroll (Dinámico) */
+.menu-scroll-container {
+    flex-grow: 1; 
+    overflow-y: auto; 
+    overflow-x: hidden;
+    scrollbar-width: none; 
+}
+.menu-scroll-container::-webkit-scrollbar { display: none; } 
 
 .sidebar-item {
     padding: 18px 22px;
@@ -96,6 +122,7 @@ body {
     transition: all 0.2s;
     color: rgba(255,255,255,0.7);
     text-decoration: none;
+    white-space: nowrap;
 }
 
 .sidebar-item:hover {
@@ -109,13 +136,19 @@ body {
     transition: opacity 0.2s;
     font-weight: 500;
 }
-
 .sidebar:hover .sidebar-item span { opacity: 1; }
 
 .sidebar-item.active {
     border-left: 5px solid var(--accent);
     background: rgba(164, 21, 91, 0.3);
     color: white;
+}
+
+/* 3. Footer de Sidebar (Fijo abajo) */
+.sidebar-footer {
+    border-top: 1px solid rgba(255,255,255,0.1);
+    background: var(--dark);
+    padding-bottom: 10px;
 }
 
 /* CONTENIDO PRINCIPAL */
@@ -223,9 +256,7 @@ input:focus, select:focus {
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
     text-align: center;
 }
-
 .kpi-card.accent { border-top-color: var(--accent); }
-
 .kpi-card span { font-size: 0.8rem; color: var(--gray); text-transform: uppercase; font-weight: bold; }
 .kpi-card h2 { font-size: 2rem; margin-top: 5px; color: var(--dark); }
 
@@ -235,46 +266,26 @@ input:focus, select:focus {
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-
-table { 
-    width: 100%; 
-    border-collapse: collapse; 
-    background: white; 
-}
-
+table { width: 100%; border-collapse: collapse; background: white; }
 th { 
-    background: var(--dark); 
-    color: white; 
-    padding: 15px; 
-    text-align: left; 
-    font-size: 0.85rem;
-    text-transform: uppercase;
+    background: var(--dark); color: white; padding: 15px; 
+    text-align: left; font-size: 0.85rem; text-transform: uppercase;
 }
-
-td { 
-    padding: 15px; 
-    border-bottom: 1px solid #eee; 
-    font-size: 0.95rem; 
-}
-
-tr:hover { background-color: rgba(246, 206, 31, 0.1); } /* Hover con el amarillo del logo muy suave */
+td { padding: 15px; border-bottom: 1px solid #eee; font-size: 0.95rem; }
+tr:hover { background-color: rgba(246, 206, 31, 0.1); }
 
 /* NOTIFICACIONES TOAST */
 .toast-notification {
     position: fixed;
-    bottom: 20px;
-    right: 20px;
-    background: var(--dark);
-    color: white;
-    padding: 15px 30px;
-    border-radius: 10px;
+    bottom: 20px; right: 20px;
+    background: var(--dark); color: white;
+    padding: 15px 30px; border-radius: 10px;
     z-index: 10000;
     border-left: 6px solid var(--accent);
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
     transform: translateY(150%);
     transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
 }
-
 .toast-notification.show { transform: translateY(0); }
 
 /* RESPONSIVE */

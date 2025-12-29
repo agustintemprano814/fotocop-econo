@@ -1,4 +1,3 @@
-
 import { auth, db } from './firebase-config.js';
 import './auth-timeout.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -7,7 +6,6 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-
 export function cargarSidebar(paginaActiva) {
     const sidebarContainer = document.getElementById('sidebar');
     if (!sidebarContainer) return;
-
 
     sidebarContainer.innerHTML = '<div style="color:white; padding:20px; font-size:12px; opacity:0.5;">Cargando menú...</div>';
 
@@ -41,7 +39,7 @@ export function cargarSidebar(paginaActiva) {
                         const activeClass = item.id === paginaActiva ? 'active' : '';
                         htmlItems += `
                             <div class="sidebar-item ${activeClass}" onclick="window.location.href='${item.url}'">
-                                ${item.icon} <span>${item.label}</span>
+                                <span class="item-icon">${item.icon}</span> <span class="item-label">${item.label}</span>
                             </div>`;
                     }
                 });
@@ -53,12 +51,15 @@ export function cargarSidebar(paginaActiva) {
                         </div>
                         <span class="logo-text">Fotocopiadora</span>
                     </div>
-                    <hr style="border: 0; border-top: 1px solid rgba(255,255,255,0.1); margin: 5px 10px 15px 10px;">
-                    <div class="menu-scroll-container" style="flex-grow: 1; overflow: hidden; display: flex; flex-direction: column;">
+                    
+                    <div class="menu-scroll-container">
                         ${htmlItems}
                     </div>
-                    <div class="sidebar-item" id="btnSalir" style="margin-top: auto; color: #ff6b6b; border-top: 1px solid rgba(255,255,255,0.1);">
-                        🚪 <span>Salir</span>
+
+                    <div class="sidebar-footer">
+                        <div class="sidebar-item" id="btnSalir" style="color: #ff6b6b;">
+                            <span class="item-icon">🚪</span> <span class="item-label">Salir</span>
+                        </div>
                     </div>
                 `;
 
