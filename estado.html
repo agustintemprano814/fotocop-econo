@@ -137,23 +137,19 @@
         </div>
     </div>
 
-    <script type="module">
-        import { cargarSidebar } from './sidebar.js';
-        try { cargarSidebar('estado'); } catch(e) {}
-    </script>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
         import { doc, getDoc, collection, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { verificarAcceso } from './security.js';
+        import { cargarSidebar } from './sidebar.js';
         import './auth-timeout.js';
 
         const container = document.getElementById('maquinasContainer');
 
         verificarAcceso(['supervisor','administrador', 'superusuario']).then(() => {
             cargarSidebar('estado');
-            cargarConfig();
         }).catch(err => {
             console.error("Acceso denegado:", err);
             window.location.href = "index.html";
