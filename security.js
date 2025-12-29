@@ -56,13 +56,15 @@ export async function verificarAcceso(rolesPermitidos) {
                     alert("Se ha agotado el límite de uso diario del servidor. Por favor, intente mañana.");
                 }
                 window.location.href = "index.html";
-            }
-            // CONFIGURACIÓN DE MANTENIMIENTO
-const MODO_MANTENIMIENTO = true; // Cambiar a 'false' para habilitar la web
 
-if (MODO_MANTENIMIENTO && !window.location.href.includes('mantenimiento.html')) {
-    window.location.href = 'mantenimiento.html';
+                        // CONFIGURACIÓN DE MANTENIMIENTO
+                    const MODO_MANTENIMIENTO = true; // Cambiar a 'false' para habilitar la web
+
+                    if (MODO_MANTENIMIENTO && !window.location.href.includes('mantenimiento.html')) {
+                   window.location.href = 'mantenimiento.html';
 }
+            }
+
         });
     });
 }
