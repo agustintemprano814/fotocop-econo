@@ -2,119 +2,74 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Ventas por Turno | Fotocop-Econo</title>
-    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <title>Fotocop-Econo | Fotocopiadora</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-        .ventas-layout {
-            display: grid;
-            grid-template-columns: 1fr 350px;
-            gap: 20px;
-        }
-        @media (max-width: 800px) { .ventas-layout { grid-template-columns: 1fr; } }
-
-        .historial-container {
-            background: #fff;
-            padding: 15px;
-            border-radius: 12px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            max-height: 80vh;
-            overflow-y: auto;
-        }
-        .venta-item {
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-size: 0.9rem;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-        .tag-servicio {
-            font-size: 10px;
-            background: #f0f0f0;
-            padding: 2px 6px;
-            border-radius: 4px;
-            text-transform: uppercase;
-            font-weight: bold;
-            color: var(--primary);
-        }
+        .venta-layout { display: grid; grid-template-columns: 1fr 350px; gap: 25px; align-items: start; }
+        .carrito-container { position: sticky; top: 20px; }
         
-        .total-box {
-            background: var(--primary);
-            color: white;
-            padding: 20px;
-            border-radius: 12px;
-            text-align: center;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 15px rgba(164, 21, 91, 0.3);
-        }
-        .total-box p { margin: 0; font-weight: bold; color: white; opacity: 0.9; }
-        .total-box h2 { margin: 5px 0 0 0; font-size: 2.5rem; color: white; }
+        /* Estilo de Carrito Unificado */
+        .item-carrito { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; gap: 12px; }
+        .btn-borrar { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.9rem; transition: color 0.3s; display: flex; align-items: center; padding: 0; width: 1.2rem; height: 1.2rem; }
+        .btn-borrar:hover { color: var(--danger); }
+        .item-info { flex-grow: 1; font-size: 0.85rem; }
 
-
-        .selector-servicio {
-            display: flex;
-            gap: 8px;
-            margin: 10px 0 20px 0;
-        }
-        .servicio-btn {
-            flex: 1;
-            padding: 12px 5px;
-            border: 2px solid #ddd;
+        /* Selector de Categoría */
+        .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+        .cat-card {
+            border: 1px solid #ddd;
             border-radius: 8px;
-            background: white;
-            cursor: pointer; 
-            font-weight: bold;
-            font-size: 12px;
-            color: #4e4e4e;
+            padding: 12px;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.85rem;
+            font-weight: 600;
+            background: #fff;
             transition: all 0.2s;
         }
-        .servicio-btn.selected {
+        .cat-card.selected {
             border-color: var(--primary);
-            background: rgba(164, 21, 91, 0.05);
-            color: var(--primary);
-        }
-
-        .ajuste-section {
-            background: #f9f9f9;
-            padding: 20px;
-            border-radius: 10px;
-            margin-top: 15px;
-            border-left: 4px solid var(--primary);
-        }
-
-        input[type="number"], textarea {
-            width: 100%;
-            padding: 12px;
-            margin-top: 8px;
-            margin-bottom: 15px;
-            border: 1px solid #ccc;
-            border-radius: 8px;
-            font-family: inherit;
-        }
-
-        textarea { resize: vertical; min-height: 60px; }
-
-        .btn-main {
-            width: 100%;
-            padding: 15px;
-            border: none;
-            border-radius: 8px;
+            background: var(--primary);
             color: white;
-            font-weight: bold;
-            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(164, 21, 91, 0.2);
         }
 
-        #btnLimpiarLocal {
-            display: none;
-            background: none;
-            color: #999;
-            font-size: 11px;
-            margin-top: 20px;
+        /* Selector de Pago Pequeño */
+        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
+        .pay-card {
             border: 1px solid #ddd;
+            border-radius: 6px;
             padding: 8px;
-            width: 100%;
+            text-align: center;
+            cursor: pointer;
+            font-size: 0.8rem;
+            font-weight: 600;
+            background: #fff;
+            transition: all 0.2s;
+            color: var(--gray);
         }
+        .pay-card.selected { border-color: var(--primary); background: var(--primary); color: white; }
+
+        .total-box { margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--primary); font-weight: bold; font-size: 1.2rem; color: var(--primary); display: flex; justify-content: space-between; }
+        
+        /* Info del Turno y Operador */
+        .turno-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .info-box {
+            background: rgba(164, 21, 91, 0.03);
+            border: 1px solid rgba(164, 21, 91, 0.1);
+            border-radius: 10px;
+            padding: 12px;
+            text-align: center;
+        }
+        .info-box small { color: var(--gray); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 1px; display: block; margin-bottom: 4px; }
+        .info-box span { font-weight: bold; color: var(--dark); font-size: 1.1rem; }
+        .info-box h2 { border: none; padding: 0; margin: 0; font-size: 1.5rem; color: var(--primary); }
     </style>
 </head>
 <body>
@@ -122,170 +77,177 @@
 
     <div class="main-content">
         <div class="container">
-            <div class="ventas-layout">
-                
-                <div class="registro-zona">
-                    <div class="total-box">
-                        <p>ACUMULADO DEL TURNO</p>
-                        <h2 id="montoAcumulado">$ 0.00</h2>
-                    </div>
+            <h2 id="tituloPagina">🖨️ Sector Fotocopiadora</h2>
+            
+            <div class="turno-info-grid">
+                <div class="info-box">
+                    <small>Operador</small>
+                    <span id="displayOperador">Cargando...</span>
+                </div>
+                <div class="info-box">
+                    <small>TOTAL </small>
+                    <h2 id="totalTurno">$ 0.00</h2>
+                </div>
+            </div>
 
-                    <div class="card" style="padding: 20px; background: white; border-radius: 12px; box-shadow: 0 2px 10px rgba(0,0,0,0.05);">
-                        <h3 style="margin:0 0 15px 0;">🛒 Nueva Registración</h3>
-                        <label>Monto de la Venta ($)</label>
-                        <input type="number" id="inputMonto" placeholder="Ej: 1500" step="0.01">
-                        
-                        <label>Categoría del Servicio:</label>
-                        <div class="selector-servicio" id="selectorServicio">
-                            <button class="servicio-btn selected" data-servicio="impresion">🖨️ Impresión</button>
-                            <button class="servicio-btn" data-servicio="fotocopia">📄 Fotocopia</button>
-                            <button class="servicio-btn" data-servicio="anillado">🌀 Anillado</button>
+            <div class="venta-layout">
+                <div class="card">
+                    <form id="formVenta">
+                        <div class="form-group">
+                            <label>Categoría del Servicio:</label>
+                            <div class="category-grid">
+                                <div class="cat-card selected" id="catCopia" onclick="seleccionarCat('Copia Rápida')">
+                                    COPIA RÁPIDA
+                                </div>
+                                <div class="cat-card" id="catStock" onclick="seleccionarCat('Stock')">
+                                    STOCK
+                                </div>
+                            </div>
                         </div>
 
-                        <button id="btnRegistrar" class="btn-main" style="background: var(--primary);">➕ REGISTRAR EN MEMORIA</button>
-                    </div>
+                        <div class="form-group">
+                            <label>Monto de la Venta ($):</label>
+                            <input type="number" id="inputMonto" placeholder="0.00" step="0.01" style="font-size: 1.2rem; font-weight: bold;">
+                        </div>
 
-                    <div class="ajuste-section">
-                        <h3 style="margin:0 0 10px 0;">📝 Ajustes / Notas</h3>
-                        <textarea id="notaDiferencia" placeholder="¿Alguna observación sobre este turno?"></textarea>
-                        <label>Monto a Ajustar ($)</label>
-                        <input type="number" id="montoAjuste" placeholder="Ej: 500" step="0.01">
-                        <button id="btnCierreTurno" class="btn-main" style="background: var(--dark);">🚀 FINALIZAR Y SUBIR TURNO</button>
-                    </div>
+                        <div class="form-group">
+                            <label>Método de Pago:</label>
+                            <div class="payment-grid">
+                                <div class="pay-card selected" id="payEfectivo" onclick="seleccionarPago('Efectivo')">
+                                    EFECTIVO
+                                </div>
+                                <div class="pay-card" id="payTransf" onclick="seleccionarPago('Transferencia')">
+                                    TRANSFERENCIA
+                                </div>
+                            </div>
+                        </div>
+
+                        <button type="button" id="btnAgregar" class="btn btn-accent" style="margin-top:15px">
+                            Añadir al Carrito
+                        </button>
+                    </form>
                 </div>
 
-                <div class="historial-container">
-                    <h3 style="margin-top:0;">📋 Movimientos</h3>
-                    <div id="listaVentasLocal"></div>
-                    <button id="btnLimpiarLocal">BORRAR MEMORIA LOCAL (ADMIN)</button>
+                <div class="carrito-container">
+                    <div class="card">
+                        <h3>Detalle de Venta</h3>
+                        <div id="itemsCarrito">
+                            <p style="color: var(--gray); font-style: italic; font-size: 0.8rem;">Carrito vacío</p>
+                        </div>
+                        <div class="total-box">
+                            <span>Subtotal:</span>
+                            <span id="totalVenta">$ 0.00</span>
+                        </div>
+                        <button id="btnVender" class="btn btn-primary" style="background-color: var(--success); margin-top: 20px;" disabled>
+                            Confirmar Venta
+                        </button>
+                    </div>
                 </div>
-
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { collection, addDoc, serverTimestamp, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { db } from './firebase-config.js';
+        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { cargarSidebar } from './sidebar.js';
-        import './auth-timeout.js';
+        import { verificarAcceso, sanitizar, renderSeguro } from './security.js';
 
+        let nombreOperador = "";
+        let catActiva = "Copia Rápida";
+        let pagoActivo = "Efectivo";
+        let carrito = [];
+        let acumuladoLocal = 0;
 
-        cargarSidebar('ventas');
+        verificarAcceso(['operario-fotocop', 'supervisor-fotocop', 'adm-eco', 'superusuario']).then(info => {
+            cargarSidebar('ventas');
+            // Capturamos el nombre real para mostrarlo y guardarlo
+            nombreOperador = info.nombreReal || info.user.email.split('@')[0];
+            renderSeguro(document.getElementById('displayOperador'), nombreOperador);
+        });
 
+        window.seleccionarCat = (cat) => {
+            catActiva = cat;
+            document.getElementById('catCopia').classList.toggle('selected', cat === 'Copia Rápida');
+            document.getElementById('catStock').classList.toggle('selected', cat === 'Stock');
+        };
 
-        let ventasTemporales = JSON.parse(localStorage.getItem('ventas_turno')) || [];
-        let servicioSeleccionado = "impresion";
+        window.seleccionarPago = (pago) => {
+            pagoActivo = pago;
+            document.getElementById('payEfectivo').classList.toggle('selected', pago === 'Efectivo');
+            document.getElementById('payTransf').classList.toggle('selected', pago === 'Transferencia');
+        };
 
-        const inputMonto = document.getElementById('inputMonto');
-        const listaDiv = document.getElementById('listaVentasLocal');
-        const montoTotalTxt = document.getElementById('montoAcumulado');
-        const btnLimpiarLocal = document.getElementById('btnLimpiarLocal');
-        const btnsServicio = document.querySelectorAll('.servicio-btn');
+        document.getElementById('btnAgregar').onclick = () => {
+            const monto = parseFloat(document.getElementById('inputMonto').value);
+            if (!monto || monto <= 0) return alert("Ingrese un monto válido");
 
+            carrito.push({ servicio: catActiva, monto: monto });
+            document.getElementById('inputMonto').value = "";
+            document.getElementById('inputMonto').focus();
+            renderizarCarrito();
+        };
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = "index.html";
-                return;
+        window.eliminarItem = (index) => {
+            carrito.splice(index, 1);
+            renderizarCarrito();
+        };
+
+        function renderizarCarrito() {
+            const container = document.getElementById('itemsCarrito');
+            const totalLabel = document.getElementById('totalVenta');
+            container.innerHTML = "";
+            let total = 0;
+
+            if(carrito.length === 0) {
+                container.innerHTML = `<p style="color: var(--gray); font-style: italic; font-size: 0.8rem;">Carrito vacío</p>`;
             }
-            try {
-                const docSnap = await getDoc(doc(db, "usuarios", user.email));
-                if (docSnap.exists() && docSnap.data().rol === 'superusuario') {
-                    btnLimpiarLocal.style.display = 'block';
-                }
-            } catch (e) { console.error("Error validando rol:", e); }
-        });
 
-        btnsServicio.forEach(btn => {
-            btn.onclick = () => {
-                btnsServicio.forEach(b => b.classList.remove('selected'));
-                btn.classList.add('selected');
-                servicioSeleccionado = btn.dataset.servicio;
-            };
-        });
-
-        function actualizarUI() {
-            listaDiv.innerHTML = "";
-            const mostrar = [...ventasTemporales].reverse().slice(0, 30);
-            
-            mostrar.forEach(v => {
-                listaDiv.innerHTML += `
-                    <div class="venta-item">
-                        <div>
-                            <span class="tag-servicio">${v.servicio || 'S/D'}</span>
-                            <br><small style="color:#999;">${v.hora}</small>
+            carrito.forEach((item, index) => {
+                total += item.monto;
+                container.innerHTML += `
+                    <div class="item-carrito">
+                        <button class="btn-borrar" onclick="eliminarItem(${index})" title="Eliminar">🗑</button>
+                        <div class="item-info">
+                            <strong>${item.servicio}</strong>
                         </div>
-                        <strong>$${parseFloat(v.monto).toFixed(2)}</strong>
+                        <div style="font-weight: 600;">$ ${item.monto.toFixed(2)}</div>
                     </div>`;
             });
 
-            const totalReal = ventasTemporales.reduce((acc, v) => acc + parseFloat(v.monto), 0);
-            montoTotalTxt.innerText = `$ ${totalReal.toFixed(2)}`;
-            localStorage.setItem('ventas_turno', JSON.stringify(ventasTemporales));
+            totalLabel.innerText = `$ ${total.toFixed(2)}`;
+            document.getElementById('btnVender').disabled = carrito.length === 0;
         }
 
-        document.getElementById('btnRegistrar').onclick = () => {
-            const monto = parseFloat(inputMonto.value);
-            if (!monto || monto <= 0) return;
+        document.getElementById('btnVender').onclick = async () => {
+            const btn = document.getElementById('btnVender');
+            btn.disabled = true;
+            btn.innerText = "⏳ Guardando...";
 
-            const nuevaVenta = {
-                monto: monto,
-                servicio: servicioSeleccionado,
-                hora: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                timestamp: Date.now()
+            const totalVenta = carrito.reduce((acc, i) => acc + i.monto, 0);
+
+            const ventaFinal = {
+                items: carrito,
+                total: totalVenta,
+                metodoPago: pagoActivo,
+                operador: nombreOperador, // Se guarda el nombre real capturado en verificarAcceso
+                sector: "Fotocopiadora",
+                fecha: new Date().toISOString().split('T')[0],
+                timestamp: serverTimestamp()
             };
 
-            ventasTemporales.push(nuevaVenta);
-            inputMonto.value = "";
-            inputMonto.focus();
-            actualizarUI();
-        };
-
-        document.getElementById('btnCierreTurno').onclick = async () => {
-            if (ventasTemporales.length === 0) return alert("No hay ventas registradas.");
-            
-            const totalRegistrado = ventasTemporales.reduce((acc, v) => acc + parseFloat(v.monto), 0);
-            const ajuste = parseFloat(document.getElementById('montoAjuste').value) || 0;
-            const totalFinal = totalRegistrado + ajuste;
-            const nota = document.getElementById('notaDiferencia').value;
-
-            if (!confirm(`¿Cerrar turno con un total de $${totalFinal.toFixed(2)}?`)) return;
-
             try {
-                await addDoc(collection(db, "ventas_turnos"), {
-                    email_operario: auth.currentUser.email,
-                    ventas_detalle: ventasTemporales,
-                    total_registrado: totalRegistrado,
-                    ajuste_monto: ajuste,
-                    total_final_turno: totalFinal,
-                    observaciones: nota,
-                    fecha: serverTimestamp()
-                });
-
-                alert("Turno guardado correctamente en la nube.");
-                
-                ventasTemporales = [];
-                localStorage.removeItem('ventas_turno');
-                document.getElementById('montoAjuste').value = "";
-                document.getElementById('notaDiferencia').value = "";
-                actualizarUI();
-
-            } catch (e) {
-                alert("Error al subir: " + e.message);
+                await addDoc(collection(db, "ventas"), ventaFinal);
+                acumuladoLocal += totalVenta;
+                document.getElementById('totalTurno').innerText = `$ ${acumuladoLocal.toFixed(2)}`;
+                alert("✅ Registrado con éxito");
+                carrito = [];
+                renderizarCarrito();
+            } catch (error) {
+                alert("Error de conexión");
+                btn.disabled = false;
             }
         };
-
-        btnLimpiarLocal.onclick = () => {
-            if(confirm("¿Borrar memoria local?")) {
-                ventasTemporales = [];
-                localStorage.removeItem('ventas_turno');
-                actualizarUI();
-            }
-        };
-
-        actualizarUI();
     </script>
 </body>
 </html>

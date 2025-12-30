@@ -1,7 +1,6 @@
 /**
  * @file security.js
- * @description Capa de seguridad centralizada para Fotocop-Econo.
- * Implementa: Blindaje XSS, Control de Sesión, Protección de Cuota y Sanitización.
+ * @description Capa de seguridad centralizada v3.1 con Identidad Humanizada y Soporte Multi-Sede.
  */
 
 import { auth, db } from './firebase-config.js';
@@ -9,45 +8,51 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
 // --- 1. CONFIGURACIÓN DE EMERGENCIA ---
-const MODO_MANTENIMIENTO = true; // Activar para cerrar la web al público
+const MODO_MANTENIMIENTO = true; 
 
-// --- 2. GESTIÓN VISUAL INMEDIATA ---
-// Evita el "Flickering" (que se vea la web un segundo antes de validar)
-document.documentElement.style.display = 'none';
+const host = window.location.hostname;
+const esLocal = host === "localhost" || host === "127.0.0.1" || host === "";
+const esPaginaLogin = window.location.pathname.endsWith('index.html') || 
+                     window.location.pathname === '/' || 
+                     window.location.pathname.includes('index');
 
-/**
- * Función de Sanitización Universal (Blindaje Punto 1)
- * Limpia cualquier string para evitar ejecución de scripts maliciosos.
- */
-export const sanitizar = (data) => {
-    if (typeof data !== 'string') return data;
-    const placeholder = document.createElement('div');
-    placeholder.textContent = data;
-    return placeholder.innerHTML;
-};
+// Gestión visual inmediata para evitar "flickering" de datos sensibles
+if (!esPaginaLogin && !esLocal) {
+    document.documentElement.style.display = 'none';
+}
 
-/**
- * Validador de Entorno local para pruebas
- */
-const esDesarrollo = () => {
-    const host = window.location.hostname;
-    return host === "localhost" || host === "127.0.0.1" || host === "";
-};
-
-// Ejecución del bloqueo de mantenimiento
-if (MODO_MANTENIMIENTO && !esDesarrollo() && !window.location.href.includes('mantenimiento.html')) {
+// Bloqueo por mantenimiento
+if (MODO_MANTENIMIENTO && !esLocal && !esPaginaLogin && !window.location.href.includes('mantenimiento.html')) {
     window.location.href = "mantenimiento.html";
 }
 
 /**
- * VERIFICAR ACCESO (Función Principal)
- * @param {Array} rolesPermitidos - Lista de roles que pueden ver la página
+ * Sanitización XSS de Entrada
+ * Previene la ejecución de scripts maliciosos en campos de texto.
  */
-export async function verificarAcceso(rolesPermitidos) {
+export const sanitizar = (data) => {
+    if (typeof data !== 'string') return data;
+    return data.replace(/[&<>"']/g, function(m) {
+        return {
+            '&': '&amp;',
+            '<': '&lt;',
+            '>': '&gt;',
+            '"': '&quot;',
+            "'": '&#039;'
+        }[m];
+    });
+};
+
+/**
+ * VERIFICAR ACCESO (Triple Blindaje: Sesión + Rol + Unidad Académica)
+ * @param {Array} rolesPermitidos - Roles autorizados para la página.
+ * @param {String} unidadRequerida - Facultad específica (ej: 'eco').
+ */
+export async function verificarAcceso(rolesPermitidos, unidadRequerida = null) {
     return new Promise((resolve) => {
         onAuthStateChanged(auth, async (user) => {
             
-            // A. Verificación de Autenticación
+            // 1. Verificación de Sesión Activa
             if (!user) {
                 console.warn("🔐 Seguridad: Sesión no encontrada.");
                 window.location.href = "index.html";
@@ -55,68 +60,83 @@ export async function verificarAcceso(rolesPermitidos) {
             }
 
             try {
-                // B. Verificación de Identidad y Rol (Single Source of Truth)
+                // 2. Consulta a Firestore (Fuente Única de Verdad)
                 const userRef = doc(db, "usuarios", user.email);
                 const docSnap = await getDoc(userRef);
 
                 if (!docSnap.exists()) {
-                    console.error("🔐 Seguridad: Usuario no registrado en DB.");
-                    await signOut(auth); // Forzamos cierre de sesión si no existe en DB
+                    console.error("🔐 Seguridad: El usuario no existe en la base de datos.");
+                    await signOut(auth);
                     window.location.href = "index.html?error=unauthorized";
                     return;
                 }
 
                 const userData = docSnap.data();
                 const rol = userData.rol;
+                const unidad = userData.unidad || "global";
+                
+                // --- NUEVO: Captura de Nombre Humanizado ---
+                const nombreReal = userData.nombre || user.email.split('@')[0];
 
-                // C. Validación de Autorización
-                if (!rolesPermitidos.includes(rol)) {
-                    console.error(`🔐 Seguridad: Intento de acceso denegado. Usuario: ${user.email} | Rol: ${rol}`);
-                    alert("🚫 Acceso restringido. Su nivel de usuario no permite esta acción.");
-                    
+                // 3. Validación de Jerarquía y Permisos
+                const esSuper = rol === 'superusuario';
+                const tieneRol = rolesPermitidos.includes(rol);
+                
+                // 4. Validación de Unidad Académica (Multitenant)
+                let unidadValida = true;
+                if (unidadRequerida && !esSuper) {
+                    if (unidad !== unidadRequerida) unidadValida = false;
+                }
+
+                if (!esSuper && (!tieneRol || !unidadValida)) {
+                    console.error(`🔐 Seguridad: Acceso denegado para [${rol}] en [${unidad}]`);
+                    alert("🚫 Acceso restringido: No posee los permisos necesarios.");
                     if (!window.location.href.includes("inicio.html")) {
                         window.location.href = "inicio.html";
                     }
                     return;
                 }
 
-                // D. Liberación de Interfaz
-                // Si llegamos aquí, el usuario es legítimo
+                // 5. Generación de Identidad Profesional Humanizada (Punto solicitado)
+                // Formato: Juan Perez | SUPERUSUARIO [GLOBAL]
+                const idProfesional = `${nombreReal} | ${rol.toUpperCase()} ${unidad !== 'global' ? '[' + unidad.toUpperCase() + ']' : ''}`;
+
+                // 6. Liberación de Interfaz
                 document.documentElement.style.display = 'block';
                 document.body.style.display = 'block';
                 
-                console.log(`🛡️ Escudo Activo: Acceso concedido [${rol}]`);
-                resolve({ user, rol, userData });
+                resolve({ 
+                    user, 
+                    rol, 
+                    unidad, 
+                    nombreReal, 
+                    idProfesional, 
+                    userData 
+                });
 
             } catch (error) {
-                manejarErrorSeguridad(error);
+                manejarErrorCritico(error, esLocal);
             }
         });
     });
 }
 
 /**
- * Manejador de Errores Críticos
- */
-function manejarErrorSeguridad(error) {
-    console.error("🚨 Error Crítico de Seguridad:", error.code);
-    
-    if (error.code === 'resource-exhausted') {
-        alert("⚠️ El servidor ha alcanzado su límite diario (Cuota Firebase). Intente mañana.");
-    } else if (error.code === 'permission-denied') {
-        alert("❌ Error de permisos: No tienes acceso a la base de datos.");
-    }
-    
-    // En cualquier error crítico, protegemos la info volviendo al inicio
-    window.location.href = "index.html";
-}
-
-/**
- * Blindaje de Lectura (Doble Seguridad - Punto 3)
- * Función para renderizar texto de forma segura sin innerHTML
+ * Renderizado Seguro contra inyección (Blindaje de Lectura - Punto 3)
  */
 export function renderSeguro(elemento, texto) {
     if (elemento) {
         elemento.textContent = texto || "";
     }
+}
+
+/**
+ * Manejador de Errores de Red o Cuota
+ */
+function manejarErrorCritico(error, local) {
+    console.error("🚨 Error Crítico de Seguridad:", error.code);
+    if (error.code === 'resource-exhausted') {
+        alert("⚠️ Cuota diaria del servidor agotada. Los datos podrían no cargar correctamente.");
+    }
+    if (!local) window.location.href = "index.html";
 }

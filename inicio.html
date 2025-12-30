@@ -2,166 +2,244 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Inicio | Fotocop-Econo</title>
-    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <title>Fotocop-Econo | Panel Principal</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-
-        document.documentElement.style.display = 'none';
-
-        .main-content-lobby { 
-            margin-left: 0 !important; 
-            padding: 40px; 
-            display: flex; 
-            justify-content: center; 
-            align-items: center; 
-            min-height: 100vh; 
-        }
-
-        .lobby-grid {
+        .module-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
             gap: 25px;
             margin-top: 30px;
         }
-
-
-        .lobby-card {
-            background: white;
-            padding: 40px 20px;
-            border-radius: 20px;
-            text-align: center;
+        
+          .module-card {
             cursor: pointer;
-            transition: all 0.3s ease;
-            border: 1px solid rgba(0,0,0,0.1);
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+            border-left: 0px solid var(--primary);
+            padding-left: 25px !important;
+        }
+        
+        .module-card:hover {
+            transform: translateY(-5px);
+            border-left: 10px solid var(--primary);
+            padding-left: 30px !important;
+            box-shadow: var(--shadow);
+        }
+
+        .module-options {
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.5s ease;
+            opacity: 0;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            gap: 15px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.05);
-            position: relative;
+            gap: 10px;
         }
 
-        .lobby-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 15px 30px rgba(164, 21, 91, 0.2);
-            border-color: var(--primary);
+        .module-card.expanded .module-options {
+            max-height: 400px;
+            opacity: 1;
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(0,0,0,0.05);
         }
 
-        .lobby-card .icon-placeholder { font-size: 3rem; position: relative; }
-        .lobby-card span { font-weight: bold; font-size: 1.1rem; color: var(--secondary); }
-        
-        .logo-inicio-container {
-            width: 100px;
-            height: 100px;
-            margin: 0 auto 15px auto;
-            border-radius: 50%;
-            border: 4px solid var(--primary);
-            overflow: hidden;
-            display: flex;
-            justify-content: center;
-            align-items: center;
+        /* --- KPIs --- */
+        .kpi-card {
+            border-top: 5px solid var(--primary) !important;
             background: white;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            padding: 20px;
+            display: none; 
+            text-align: left;
         }
 
-        .logo-inicio-container img {
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+        .kpi-title {
+            font-size: 0.75rem;
+            color: var(--gray);
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: block;
+            margin-bottom: 5px;
         }
+
+        .kpi-line {
+            width: 45px; 
+            height: 3px;
+            background-color: var(--accent);
+            margin-bottom: 15px;
+            border-radius: 2px;
+        }
+
+        .kpi-value {
+            font-size: 1.4rem; 
+            color: var(--dark);
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .module-icon { font-size: 2.2rem; margin-bottom: 10px; display: block; }
     </style>
 </head>
 <body>
-    <div class="main-content-lobby">
-        <div class="container" style="max-width: 1000px; width: 100%;">
-            <div style="text-align: center; margin-bottom: 40px;">
-                <div class="logo-inicio-container">
-                    <img src="https://linktr.ee/og/image/franjaeconounlp.jpg" alt="Logo">
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <div class="user-welcome">
+                <div>
+                    <h2 id="saludo" style="border:none; margin:0; padding:0; color: var(--primary); font-size: 1.1rem; letter-spacing: 0.5px;">Cargando identidad...</h2>
+                    <p id="fechaHoy" style="color: var(--gray); font-size: 0.9rem; margin-top: 5px;"></p>
                 </div>
-                <h1 style="color: var(--primary); margin: 10px 0 5px 0;">Panel de Control</h1>
-                <p id="user-email" style="color: var(--gray); font-weight: 600;"></p>
             </div>
 
-            <div id="menu-lobby" class="lobby-grid">
+            <div class="kpi-grid">
+                <div class="kpi-card" id="kpi-apuntes-caja">
+                    <span class="kpi-title">APUNTES | Caja Hoy</span>
+                    <div class="kpi-line"></div>
+                    <p class="kpi-value" id="val-apuntes-caja">$ 0.00</p>
+                </div>
+                
+                <div class="kpi-card" id="kpi-apuntes-stock">
+                    <span class="kpi-title">APUNTES | Alertas Stock</span>
+                    <div class="kpi-line"></div>
+                    <p class="kpi-value" id="val-apuntes-stock">Consultando...</p>
                 </div>
 
-            <div style="text-align: center; margin-top: 50px;">
-                <button id="btnCerrarSesion" style="background: var(--dark); width: auto; padding: 12px 30px;">
-                    🚪 Cerrar Sesión
-                </button>
+                <div class="kpi-card" id="kpi-foto-caja">
+                    <span class="kpi-title">FOTOCOP | Recaudación</span>
+                    <div class="kpi-line"></div>
+                    <p class="kpi-value" id="val-foto-caja">$ 0.00</p>
+                </div>
+
+                <div class="kpi-card" id="kpi-foto-maquinas">
+                    <span class="kpi-title">FOTOCOP | Estado Máquinas</span>
+                    <div class="kpi-line"></div>
+                    <p class="kpi-value" id="val-foto-maquinas">OK</p>
+                </div>
+            </div>
+
+            <div class="module-grid">
+                <div class="card module-card" onclick="toggleModulo(this)">
+                    <span class="module-icon">💰</span>
+                    <h3>Punto de Venta</h3>
+                    <p>Facturación de servicios y venta de apuntes.</p>
+                    <div class="module-options">
+                        <button class="btn btn-primary" onclick="window.location.href='ventas.html'">🖨️ Sector Fotocopiadora</button>
+                        <button class="btn btn-accent" onclick="window.location.href='apuntes.html'">📚 Sector Apuntes</button>
+                    </div>
+                </div>
+
+                <div class="card module-card" onclick="toggleModulo(this)">
+                    <span class="module-icon">📦</span>
+                    <h3>Gestión de Almacén</h3>
+                    <p>Inventario de apuntes e insumos operativos.</p>
+                    <div class="module-options">
+                        <button class="btn btn-primary" onclick="window.location.href='stock.html'">🛒 Control de Stock</button>
+                        <button class="btn btn-primary" onclick="window.location.href='insumos.html'">🛠️ Insumos Internos</button>
+                    </div>
+                </div>
+
+                <div class="card module-card" id="moduloAdmin" style="display: none;" onclick="toggleModulo(this)">
+                    <span class="module-icon">📑</span>
+                    <h3>Administración</h3>
+                    <p>Cierres, auditoría y configuración del sistema.</p>
+                    <div class="module-options">
+                        <button class="btn btn-primary" onclick="window.location.href='cierres.html'">📑 Cierres de Caja</button>
+                        <button class="btn btn-primary" onclick="window.location.href='reportes.html'">📂 Reportes Generales</button>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import './auth-timeout.js';
+        import { db } from './firebase-config.js';
+        import { collection, query, where, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { cargarSidebar } from './sidebar.js';
+        import { verificarAcceso, renderSeguro } from './security.js';
 
-        onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                window.location.href = "index.html";
-                return;
+        // Definimos los roles autorizados 
+        const rolesAutorizados = [
+            'superusuario', 'adm-eco', 
+            'supervisor-apuntes', 'supervisor-fotocop',
+            'operario-apuntes', 'operario-fotocop'
+        ];
+
+        verificarAcceso(rolesAutorizados).then(info => {
+            cargarSidebar('inicio');
+            const rol = info.rol;
+
+            // Inyectamos la Identidad Humanizada (Juan Perez | ROL [UNIDAD])
+            renderSeguro(document.getElementById('saludo'), `¡Hola, ${info.idProfesional}!`);
+            
+            document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString('es-AR', { 
+                weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' 
+            });
+
+            // --- LÓGICA DE VISIBILIDAD DE KPIs POR ROLES SEGMENTADOS ---
+            
+            // KPIs APUNTES
+            if (['superusuario', 'adm-eco', 'supervisor-apuntes', 'operario-apuntes'].includes(rol)) {
+                document.getElementById('kpi-apuntes-stock').style.display = 'block';
+            }
+            if (['superusuario', 'adm-eco', 'supervisor-apuntes'].includes(rol)) {
+                document.getElementById('kpi-apuntes-caja').style.display = 'block';
             }
 
-            document.getElementById('user-email').innerText = user.email;
-
-            try {
-                const docSnap = await getDoc(doc(db, "usuarios", user.email));
-                const rol = docSnap.exists() ? docSnap.data().rol : "operario";
-
-                const opciones = [
-
-                    { id: 'ventas', icon: '🛒', label: 'Ventas', url: 'ventas.html', roles: ['operario', 'supervisor', 'administrador', 'superusuario'] },
-                    { id: 'estado', icon: '🖨️', label: 'Estado', url: 'estado.html', roles: ['operario', 'supervisor', 'administrador', 'superusuario'] },
-                    { id: 'cierre', icon: '📑', label: 'Cierre', url: 'cierres.html', roles: ['supervisor', 'superusuario'] },
-                    { id: 'insumos', icon: '📦', label: 'Insumos', url: 'insumos.html', roles: ['supervisor', 'administrador', 'superusuario'] },
-                    { id: 'editor', icon: '🛠️', label: 'Edición', url: 'editor.html', roles: ['supervisor', 'superusuario'] },
-                    { id: 'dash', icon: '📊', label: 'Dashboard Financiero', url: 'dashboard-financiero.html', roles: ['administrador', 'superusuario'] },
-                    { id: 'rendimiento', icon: '📈', label: 'Rendimiento Técnico', url: 'rendimiento.html', roles: ['administrador', 'superusuario'] },
-                    { id: 'rep', icon: '📂', label: 'Reportes', url: 'reportes.html', roles: ['superusuario'] },
-                    { id: 'admin', icon: '📥', label: 'Importar', url: 'importador.html', roles: ['superusuario'] },
-                    { id: 'config', icon: '⚙️', label: 'Configuración', url: 'configuracion.html', roles: ['administrador', 'superusuario'] }
-                ];
-
-                const lobbyContainer = document.getElementById('menu-lobby');
-                lobbyContainer.innerHTML = ''; 
-
-                opciones.forEach(op => {
-                    const tieneAcceso = op.roles.includes(rol);
-                    
-
-                    if (!tieneAcceso) return;
-
-                    const card = document.createElement('div');
-                    card.className = `lobby-card`;
-                    
-                    card.innerHTML = `
-                        <div class="icon-placeholder">${op.icon}</div>
-                        <span>${op.label}</span>
-                    `;
-
-                    card.onclick = () => {
-                        window.location.href = op.url;
-                    };
-                    
-                    lobbyContainer.appendChild(card);
-                });
-
-
-                document.documentElement.style.display = 'block';
-                document.body.style.display = 'block';
-
-            } catch (error) {
-                console.error("Error al cargar el lobby:", error);
+            // KPIs FOTOCOPIADORA
+            if (['superusuario', 'adm-eco', 'supervisor-fotocop', 'operario-fotocop'].includes(rol)) {
+                document.getElementById('kpi-foto-maquinas').style.display = 'block';
             }
+            if (['superusuario', 'adm-eco', 'supervisor-fotocop'].includes(rol)) {
+                document.getElementById('kpi-foto-caja').style.display = 'block';
+            }
+
+            // MODULO ADMIN
+            if (['superusuario', 'adm-eco'].includes(rol)) {
+                document.getElementById('moduloAdmin').style.display = 'block';
+            }
+
+            actualizarKPIs(info.unidad);
         });
 
-        document.getElementById('btnCerrarSesion').onclick = () => {
-            signOut(auth).then(() => window.location.href = "index.html");
+        window.toggleModulo = (card) => {
+            const isExpanded = card.classList.contains('expanded');
+            document.querySelectorAll('.module-card').forEach(c => c.classList.remove('expanded'));
+            if (!isExpanded) card.classList.add('expanded');
         };
+
+        function actualizarKPIs(unidadUsuario) {
+            const hoy = new Date().toISOString().split('T')[0];
+
+            // 1. Recaudación Apuntes 
+            const qApu = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Apuntes"));
+            onSnapshot(qApu, (snap) => {
+                let t = 0; 
+                snap.forEach(d => {
+                    if(unidadUsuario === 'global' || d.data().unidad === unidadUsuario) t += d.data().total;
+                });
+                renderSeguro(document.getElementById('val-apuntes-caja'), `$ ${t.toLocaleString('es-AR', {minimumFractionDigits: 2})}`);
+            });
+
+            // 2. Alertas Stock Apuntes
+            onSnapshot(query(collection(db, "stock"), where("cantidad", "<=", 5)), (snap) => {
+                let criticos = 0;
+                snap.forEach(d => { if(unidadUsuario === 'global' || d.data().unidad === unidadUsuario) criticos++; });
+                renderSeguro(document.getElementById('val-apuntes-stock'), criticos > 0 ? `${criticos} CRÍTICOS` : "OK");
+            });
+
+            // 3. Recaudación Fotocopiadora
+            const qFoto = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Fotocopiadora"));
+            onSnapshot(qFoto, (snap) => {
+                let t = 0; 
+                snap.forEach(d => {
+                    if(unidadUsuario === 'global' || d.data().unidad === unidadUsuario) t += d.data().total;
+                });
+                renderSeguro(document.getElementById('val-foto-caja'), `$ ${t.toLocaleString('es-AR', {minimumFractionDigits: 2})}`);
+            });
+        }
     </script>
 </body>
-</html> 
+</html>

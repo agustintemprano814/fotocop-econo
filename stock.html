@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Fotocop-Econo | Gestión de Stock</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <h2>📦 Gestión de Stock e Inventario</h2>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <span>Total Artículos</span>
+                    <h2 id="totalArticulos">0</h2>
+                </div>
+                <div class="kpi-card accent">
+                    <span>Último Movimiento</span>
+                    <h2 id="lastMove" style="font-size: 1rem;">-</h2>
+                </div>
+            </div>
+
+            <div class="grid-estado">
+                <div class="card">
+                    <h3>Actualizar / Crear Material</h3>
+                    <form id="formStock">
+                        <div class="form-group">
+                            <label>Código de Barras:</label>
+                            <input type="text" id="codigoBarras" placeholder="Enfoque aquí y escanee..." autofocus>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label>Nombre de la Materia - Apunte:</label>
+                            <input type="text" id="nombreMaterial" required>
+                        </div>
+
+                        <div class="grid-estado" style="grid-template-columns: 1fr 1fr; margin-bottom:0; gap:10px;">
+                            <div class="form-group">
+                                <label>Precio de venta ($):</label>
+                                <input type="number" id="precio" step="0.01" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Stock Actual:</label>
+                                <input type="number" id="cantidadStock" value="0" readonly style="background: #eee;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Ajustar Stock (+/-):</label>
+                            <input type="number" id="ajusteStock" placeholder="Ej: 10 para sumar, -5 para restar" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">💾 Guardar Cambios</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Últimos Movimientos</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Material</th>
+                                    <th>Cant.</th>
+                                    <th>Operador</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaHistorial">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, doc, getDoc, setDoc, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { cargarSidebar } from './sidebar.js';
+        import { verificarAcceso, sanitizar } from './security.js';
+
+        let userMail = "";
+
+        // 1. Seguridad y Sidebar
+        verificarAcceso(['supervisor', 'administrador', 'superusuario']).then(info => {
+            userMail = info.user.email;
+            cargarSidebar('stock');
+            escucharCambios();
+        });
+
+        const form = document.getElementById('formStock');
+        const inputCodigo = document.getElementById('codigoBarras');
+
+        // 2. Lógica del Lector de Barras: Al detectar un código, busca automáticamente
+        inputCodigo.addEventListener('change', async () => {
+            const code = inputCodigo.value.trim();
+            if (!code) return;
+
+            const docRef = doc(db, "stock", code);
+            const docSnap = await getDoc(docRef);
+
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                document.getElementById('nombreMaterial').value = data.nombre;
+                document.getElementById('precio').value = data.precio;
+                document.getElementById('cantidadStock').value = data.cantidad;
+            } else {
+                // Si el código es nuevo, limpiamos para crear
+                document.getElementById('nombreMaterial').value = "";
+                document.getElementById('precio').value = "";
+                document.getElementById('cantidadStock').value = 0;
+            }
+        });
+
+        // 3. Guardar y Registrar Movimiento (Punto 2: Sanitización)
+        form.onsubmit = async (e) => {
+            e.preventDefault();
+            const code = sanitizar(inputCodigo.value.trim());
+            const nombre = sanitizar(document.getElementById('nombreMaterial').value);
+            const precio = parseFloat(document.getElementById('precio').value);
+            const ajuste = parseInt(document.getElementById('ajusteStock').value);
+            const stockActual = parseInt(document.getElementById('cantidadStock').value);
+
+            if (!code) return alert("Ingrese un código");
+
+            try {
+                // Actualizar Stock
+                const nuevoStock = stockActual + ajuste;
+                await setDoc(doc(db, "stock", code), {
+                    nombre, precio, cantidad: nuevoStock, ultimaMod: serverTimestamp()
+                }, { merge: true });
+
+                // Registrar en Historial (Movimiento)
+                await addDoc(collection(db, "movimientos_stock"), {
+                    codigo: code,
+                    nombre: nombre,
+                    ajuste: ajuste,
+                    operador: userMail,
+                    fecha: serverTimestamp()
+                });
+
+                alert("Stock actualizado");
+                form.reset();
+                inputCodigo.focus();
+            } catch (err) {
+                console.error(err);
+                alert("Error al guardar");
+            }
+        };
+
+        // 4. Escucha en tiempo real (KPIs y Tabla)
+        function escucharCambios() {
+            // Historial (Punto 3: Blindaje de lectura)
+            const q = query(collection(db, "movimientos_stock"), orderBy("fecha", "desc"), limit(10));
+            onSnapshot(q, (snapshot) => {
+                const tbody = document.getElementById('tablaHistorial');
+                tbody.innerHTML = "";
+                snapshot.forEach(doc => {
+                    const mov = doc.data();
+                    const fila = document.createElement('tr');
+                    const fechaTxt = mov.fecha ? mov.fecha.toDate().toLocaleString() : "...";
+                    
+                    fila.innerHTML = `
+                        <td>${fechaTxt}</td>
+                        <td>${mov.nombre}</td>
+                        <td style="color: ${mov.ajuste >= 0 ? 'green' : 'red'}"><b>${mov.ajuste}</b></td>
+                        <td>${mov.operador.split('@')[0]}</td>
+                    `;
+                    tbody.appendChild(fila);
+                });
+            });
+        }
+    </script>
+</body>
+</html>

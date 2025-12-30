@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>SISTEMA | Gestión de Usuarios Crítica</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <style>
+        .admin-layout { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
+        .rol-badge {
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .badge-super { background: #ffeaa7; color: #d63031; border: 1px solid #fab1a0; }
+        .badge-admin { background: #dfe6e9; color: var(--primary); }
+        .badge-op { background: #f1f2f6; color: var(--gray); }
+        
+        .danger-zone {
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px dashed var(--danger);
+            border-radius: 8px;
+            background: rgba(231, 76, 60, 0.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <h2 style="color: var(--danger); border-bottom-color: var(--danger);">🛡️ Gestión de Credenciales y Roles</h2>
+            
+            <div class="admin-layout">
+                <div class="card">
+                    <h3>Alta de Nuevo Usuario</h3>
+                    <p style="font-size: 0.8rem; color: var(--gray); margin-bottom: 15px;">
+                        Nota: El usuario ya debe estar registrado en Firebase Auth previamente.
+                    </p>
+                    <form id="formUser">
+                        <div class="form-group">
+                            <label>Correo Electrónico (ID):</label>
+                            <input type="email" id="userEmail" placeholder="ejemplo@correo.com" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Nombre Completo:</label>
+                            <input type="text" id="userNombre" placeholder="Juan Pérez" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Rol Asignado:</label>
+                            <select id="userRol" required>
+                                <option value="operario-apuntes">Operario Apuntes</option>
+                                <option value="operario-fotocop">Operario Fotocopiadora</option>
+                                <option value="supervisor-apuntes">Supervisor Apuntes</option>
+                                <option value="supervisor-fotocop">Supervisor Fotocopiadora</option>
+                                <option value="adm-eco">Administrador ECO</option>
+                                <option value="superusuario">Superusuario (CUIDADO)</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Unidad Académica:</label>
+                            <select id="userUnidad" required>
+                                <option value="eco">Económicas (ECO)</option>
+                                <option value="global">Global (Solo Superusuario)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">💾 Guardar Permisos</button>
+                    </form>
+                </div>
+
+                <div class="card">
+                    <h3>Usuarios con Acceso al Sistema</h3>
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Nombre / Email</th>
+                                    <th>Rol / Unidad</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tablaUsuarios">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { cargarSidebar } from './sidebar.js';
+        import { verificarAcceso, sanitizar, renderSeguro } from './security.js';
+
+        let miCorreo = "";
+
+        // 1. BLOQUEO DE SEGURIDAD NIVEL 1: Solo Superusuario
+        verificarAcceso(['superusuario']).then(info => {
+            miCorreo = info.user.email;
+            cargarSidebar('usuarios');
+            escucharUsuarios();
+        });
+
+        // 2. ESCUCHAR USUARIOS EN TIEMPO REAL
+        function escucharUsuarios() {
+            onSnapshot(collection(db, "usuarios"), (snapshot) => {
+                const tbody = document.getElementById('tablaUsuarios');
+                tbody.innerHTML = "";
+                
+                snapshot.forEach(d => {
+                    const u = d.data();
+                    const id = d.id;
+                    const esMiPropioUsuario = id === miCorreo;
+                    
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>
+                            <strong>${sanitizar(u.nombre)}</strong><br>
+                            <small style="color:var(--gray)">${id}</small>
+                        </td>
+                        <td>
+                            <span class="rol-badge ${u.rol === 'superusuario' ? 'badge-super' : 'badge-admin'}">
+                                ${u.rol}
+                            </span><br>
+                            <small>${u.unidad.toUpperCase()}</small>
+                        </td>
+                        <td>
+                            <button class="btn-delete" 
+                                    style="background:none; color:var(--danger); border:none; cursor:pointer; font-weight:bold;"
+                                    ${esMiPropioUsuario ? 'disabled' : ''} 
+                                    onclick="eliminarUsuario('${id}')">
+                                ${esMiPropioUsuario ? '👤 (Tú)' : '🗑️ Quitar'}
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            });
+        }
+
+        // 3. GUARDAR USUARIO (Nivel 2 de Blindaje: Sanitización)
+        document.getElementById('formUser').onsubmit = async (e) => {
+            e.preventDefault();
+            
+            const email = sanitizar(document.getElementById('userEmail').value.trim().toLowerCase());
+            const nombre = sanitizar(document.getElementById('userNombre').value.trim());
+            const rol = document.getElementById('userRol').value;
+            const unidad = document.getElementById('userUnidad').value;
+
+            if (rol === 'superusuario' && unidad !== 'global') {
+                return alert("⚠️ Un Superusuario debe ser de unidad 'global'");
+            }
+
+            try {
+                await setDoc(doc(db, "usuarios", email), {
+                    nombre,
+                    rol,
+                    unidad,
+                    fechaAlta: new Date().toISOString()
+                });
+                alert("✅ Usuario configurado correctamente.");
+                document.getElementById('formUser').reset();
+            } catch (error) {
+                console.error(error);
+                alert("❌ Error al guardar en base de datos.");
+            }
+        };
+
+        // 4. ELIMINAR ACCESO
+        window.eliminarUsuario = async (id) => {
+            if (confirm(`¿Está seguro de revocar el acceso a ${id}? El usuario ya no podrá entrar al sistema.`)) {
+                try {
+                    await deleteDoc(doc(db, "usuarios", id));
+                } catch (error) {
+                    alert("No se pudo eliminar el permiso.");
+                }
+            }
+        };
+    </script>
+</body>
+</html>

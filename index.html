@@ -6,149 +6,141 @@
     <title>Fotocopiadora Económicas UNLP | Acceso</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
-    
     <style>
-        /* Estilos específicos de refuerzo para el Log-in */
+        /* Refuerzo de estilos específicos para el área de Login */
         body.login-body { 
             justify-content: center; 
             align-items: center; 
             height: 100vh; 
             display: flex; 
             margin: 0;
-            overflow: hidden;
+            background-color: var(--dark); /* Color de respaldo si la imagen falla */
         }
 
         .login-card { 
             width: 100%; 
             max-width: 400px; 
-            animation: slideUp 0.6s ease-out;
+            animation: fadeIn 0.6s ease-in-out;
         }
 
-        @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .brand-subtitle {
-            text-align: center; 
-            color: var(--primary); 
-            font-weight: 800; 
-            font-size: 11px; 
-            margin-bottom: 5px; 
-            letter-spacing: 2px;
-            text-transform: uppercase;
-        }
-
-        .brand-description {
-            text-align: center; 
-            color: var(--gray); 
-            font-size: 12px; 
-            margin-bottom: 30px;
+        /* Ajuste manual para el título del login con la línea amarilla característica */
+        .login-card h2 {
+            text-align: center;
+            margin-top: 0;
+            font-size: 1.5rem;
+            border-bottom: 3px solid var(--accent); /* Línea Amarilla */
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            text-transform: none; /* Evita mayúsculas forzadas del style.css si prefieres así */
         }
     </style>
 </head>
 <body class="login-body"> 
+
     <div class="container login-card">
         <div class="logo-container">
-            <img src="https://linktr.ee/og/image/franjaeconounlp.jpg" alt="Logo Franja Morada">
+            <img src="https://linktr.ee/og/image/franjaeconounlp.jpg" alt="Logo">
         </div>
         
-        <h2 style="text-align: center; border: none; padding: 0; margin-bottom: 5px;">Acceso al Sistema</h2>
-        <p class="brand-subtitle">Franja Morada Económicas</p>
-        <p class="brand-description">Gestión Integral de Fotocopiadora</p>
+        <h2>Fotocopiadora Económicas</h2>
+        <p style="text-align: center; color: var(--primary); font-weight: bold; font-size: 13px; margin-bottom: 5px; letter-spacing: 1px;">FRANJA MORADA</p>
+        <p style="text-align: center; color: var(--gray); font-size: 12px; margin-bottom: 30px;">Centro de Estudiantes de Cs. Económicas</p>
         
         <form id="loginForm">
             <div class="form-group">
-                <label for="usuario">Correo Institucional</label>
-                <input type="email" id="usuario" placeholder="ejemplo@economicas.unlp.edu.ar" required autocomplete="username">
+                <label for="usuario">Correo Electrónico</label>
+                <input type="email" id="usuario" placeholder="usuario@correo.com" required autocomplete="username">
             </div>
             <div class="form-group">
                 <label for="password">Contraseña</label>
                 <input type="password" id="password" placeholder="••••••••" required autocomplete="current-password">
             </div>
-            <button type="submit" id="btnIngresar" class="btn btn-primary">
-                <span>🔐 Entrar al Sistema</span>
+            <button type="submit" id="btnEntrar" class="btn btn-primary">
+                Entrar al Sistema
             </button>
         </form>
         
-        <div id="mensaje" class="toast-notification" style="position: static; transform: none; margin-top: 20px; width: 100%; text-align: center; border-radius: 8px;"></div>
+        <div id="mensaje" style="margin-top: 20px; text-align: center; font-size: 14px; font-weight: bold; min-height: 24px; transition: 0.3s;"></div>
     </div>
 
     <script type="module">
-    import { auth, db } from './firebase-config.js';
-    import { setPersistence, browserSessionPersistence, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-    import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-    // Importamos la herramienta de sanitización de nuestro security centralizado
-    import { sanitizar } from './security.js';
+        import { auth, db } from './firebase-config.js';
+        import { setPersistence, browserSessionPersistence, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        // Punto 2: Importamos la herramienta de sanitización del security centralizado
+        import { sanitizar } from './security.js';
 
-    const loginForm = document.getElementById('loginForm');
-    const mensaje = document.getElementById('mensaje');
-    const btn = document.getElementById('btnIngresar');
+        const loginForm = document.getElementById('loginForm');
+        const mensaje = document.getElementById('mensaje');
+        const btnEntrar = document.getElementById('btnEntrar');
 
-    // Al cargar el login, nos aseguramos de que no queden restos de sesiones previas
-    window.onload = () => { auth.signOut(); };
+        // Limpieza de sesión al cargar para mayor seguridad
+        window.onload = () => { auth.signOut(); };
 
-    // Manejo de mensajes por parámetros de URL (Inactividad, etc.)
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('reason') === 'timeout') {
-        mostrarMensaje("⏳ Sesión cerrada por inactividad.", "var(--accent)");
-    }
-
-    function mostrarMensaje(texto, color) {
-        mensaje.innerText = texto;
-        mensaje.style.borderLeftColor = color;
-        mensaje.classList.add('show');
-    }
-
-    loginForm.onsubmit = async (e) => {
-        e.preventDefault();
-        
-        // Bloqueo de UI para evitar múltiples clics (Ataque de fuerza bruta local)
-        btn.disabled = true;
-        mostrarMensaje("⏳ Validando credenciales...", "var(--primary)");
-
-        // Sanitización de entradas (Blindaje Paso 2)
-        const email = sanitizar(document.getElementById('usuario').value.trim().toLowerCase());
-        const pass = document.getElementById('password').value;
-
-        try {
-            // Establecemos persistencia solo por sesión del navegador (Seguridad en equipos compartidos)
-            await setPersistence(auth, browserSessionPersistence);
-            
-            // Intento de Login
-            const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-            const user = userCredential.user;
-
-            // Verificación de doble factor lógica: ¿Existe el usuario en nuestra DB de Roles?
-            const docSnap = await getDoc(doc(db, "usuarios", user.email));
-
-            if (docSnap.exists()) {
-                const rol = docSnap.data().rol;
-                mostrarMensaje(`✅ Bienvenido, nivel: ${rol}`, "var(--success)");
-                
-                // Redirección limpia
-                setTimeout(() => { window.location.href = "inicio.html"; }, 1000);
-            } else {
-                // Usuario existe en Auth pero no en nuestra base de datos (Posible intruso)
-                throw new Error("no-role");
-            }
-
-        } catch (error) {
-            btn.disabled = false;
-            console.error("Auth Error:", error.code);
-
-            if (error.message === "no-role") {
-                mostrarMensaje("⚠️ Cuenta sin permisos de acceso.", "var(--accent)");
-                await auth.signOut();
-            } else if (error.code === 'auth/invalid-credential' || error.code === 'auth/user-not-found') {
-                mostrarMensaje("❌ Credenciales incorrectas.", "var(--danger)");
-            } else if (error.code === 'auth/too-many-requests') {
-                mostrarMensaje("🚫 Demasiados intentos. Bloqueado temporalmente.", "var(--danger)");
-            } else {
-                mostrarMensaje("❌ Error de conexión al servidor.", "var(--danger)");
-            }
+        // Mostrar errores de tiempo de espera (timeout) si vienen por URL
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('reason') === 'timeout') {
+            mensaje.style.color = "var(--accent)";
+            mensaje.innerText = "⏳ Sesión cerrada por inactividad.";
         }
-    };
+
+        loginForm.onsubmit = async (e) => {
+            e.preventDefault();
+            
+            // UI Feedback
+            btnEntrar.disabled = true;
+            btnEntrar.innerText = "⏳ Verificando...";
+            mensaje.style.color = "var(--primary)";
+            mensaje.innerText = "Procesando ingreso...";
+
+            // BLINDAJE: Sanitizamos el correo antes de procesarlo
+            const email = sanitizar(document.getElementById('usuario').value.trim().toLowerCase());
+            const pass = document.getElementById('password').value;
+
+            try {
+                // Seguridad: La sesión solo dura mientras el navegador esté abierto
+                await setPersistence(auth, browserSessionPersistence);
+                
+                // Intento de autenticación en Firebase
+                const userCredential = await signInWithEmailAndPassword(auth, email, pass);
+                
+                // Verificación de Rol en Firestore (Capa extra de seguridad)
+                const docSnap = await getDoc(doc(db, "usuarios", email));
+
+                if (docSnap.exists()) {
+                    mensaje.style.color = "var(--success)";
+                    mensaje.innerText = "✅ ¡Acceso concedido!";
+                    setTimeout(() => { window.location.href = "inicio.html"; }, 800);
+                } else {
+                    // Si el usuario está en Auth pero no en la tabla de usuarios autorizados
+                    await auth.signOut();
+                    mensaje.style.color = "var(--danger)";
+                    mensaje.innerText = "⚠️ Usuario no autorizado en la base de datos.";
+                    btnEntrar.disabled = false;
+                    btnEntrar.innerText = "Entrar al Sistema";
+                }
+
+            } catch (error) {
+                console.error("Login Error:", error.code);
+                btnEntrar.disabled = false;
+                btnEntrar.innerText = "Entrar al Sistema";
+                mensaje.style.color = "var(--danger)";
+                
+                // Mensajes de error profesionales (no revelan si el usuario existe o no)
+                if (error.code === 'auth/invalid-credential') {
+                    mensaje.innerText = "❌ Correo o contraseña incorrectos.";
+                } else if (error.code === 'auth/too-many-requests') {
+                    mensaje.innerText = "🚫 Demasiados intentos. Intente más tarde.";
+                } else {
+                    mensaje.innerText = "❌ Error al conectar con el servidor.";
+                }
+            }
+        };
     </script>
 </body>
 </html>

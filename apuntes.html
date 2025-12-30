@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <title>Fotocop-Econo | Venta de Apuntes</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <style>
+        .venta-layout { display: grid; grid-template-columns: 1fr 350px; gap: 25px; align-items: start; }
+        .carrito-container { position: sticky; top: 20px; }
+        
+        /* Ítems del Carrito - Rectificación Trash */
+        .item-carrito { display: flex; align-items: center; padding: 8px 0; border-bottom: 1px solid #eee; gap: 10px; }
+        .btn-borrar {
+            background: none; border: none; color: #ccc; cursor: pointer;
+            font-size: 0.85rem; transition: color 0.3s;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0; width: 1.5rem; height: 1.5rem; 
+        }
+        .btn-borrar:hover { color: var(--danger); }
+        .item-info { flex-grow: 1; font-size: 0.85rem; }
+
+        /* Info del Turno y Operador */
+        .turno-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
+        .info-box {
+            background: rgba(164, 21, 91, 0.03);
+            border: 1px solid rgba(164, 21, 91, 0.1);
+            border-radius: 10px; padding: 12px; text-align: center;
+        }
+        .info-box small { color: var(--gray); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 1px; display: block; margin-bottom: 4px; }
+        .info-box span { font-weight: bold; color: var(--dark); font-size: 1rem; }
+        .info-box h2 { border: none; padding: 0; margin: 0; font-size: 1.4rem; color: var(--primary); }
+
+        /* Buscador Estilizado */
+        .search-wrapper {
+            position: relative; background: #fff; border: 1px solid #ddd;
+            border-radius: 6px; padding: 8px 12px; display: flex; align-items: center;
+            transition: border-color 0.3s;
+        }
+        .search-wrapper:focus-within { border-color: var(--primary); }
+        #busquedaMaterial { border: none !important; outline: none !important; width: 100%; font-size: 0.95rem; color: var(--dark); background: transparent; }
+
+        /* Selectores de Pago Compactos */
+        .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
+        .pay-card {
+            border: 1px solid #ddd; border-radius: 6px; padding: 8px;
+            text-align: center; cursor: pointer; font-size: 0.75rem;
+            font-weight: 700; background: #fff; transition: all 0.2s; color: var(--gray);
+        }
+        .pay-card.selected { border-color: var(--primary); background: var(--primary); color: white; }
+
+        .total-box { margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--primary); font-weight: bold; font-size: 1.2rem; color: var(--primary); display: flex; justify-content: space-between; }
+        .scan-mode { background: #fdf2f7; border: 1px dashed var(--primary); padding: 12px; border-radius: 8px; margin-bottom: 20px; font-size: 0.9rem; }
+        .scan-mode input { padding: 5px 10px; font-size: 0.9rem; border: 1px solid #ddd; border-radius: 4px; width: 100%; margin-top: 5px; }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <div class="main-content">
+        <div class="container">
+            <h2 id="tituloPagina">📚 Sector Apuntes</h2>
+            
+            <div class="turno-info-grid">
+                <div class="info-box">
+                    <small>Operador</small>
+                    <span id="displayOperador">Cargando...</span>
+                </div>
+                <div class="info-box">
+                    <small>TOTAL</small>
+                    <h2 id="totalTurno">$ 0.00</h2>
+                </div>
+            </div>
+
+            <div class="venta-layout">
+                <div class="card">
+                    <div class="scan-mode">
+                        <label>🚀 <strong>Lector de Barras:</strong></label>
+                        <input type="text" id="scanInput" placeholder="Escanee o escriba código..." autofocus>
+                    </div>
+
+                    <form id="formApunte">
+                        <div class="form-group">
+                            <label>Búsqueda Manual:</label>
+                            <div class="search-wrapper">
+                                <input type="text" id="busquedaMaterial" list="listaMateriales" placeholder="Buscar por nombre de materia o apunte...">
+                                <datalist id="listaMateriales"></datalist>
+                            </div>
+                        </div>
+
+                        <div class="grid-estado" style="grid-template-columns: 1fr 1fr; gap:15px;">
+                            <div class="form-group">
+                                <label>Cantidad:</label>
+                                <input type="number" id="cantidad" value="1" min="1">
+                            </div>
+                            <div class="form-group">
+                                <label>P. Unitario ($):</label>
+                                <input type="number" id="monto" readonly style="background: #f4f4f4; color: #888;">
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Método de Pago:</label>
+                            <div class="payment-grid">
+                                <div class="pay-card selected" id="optEfectivo" onclick="seleccionarPago('Efectivo')">EFECTIVO</div>
+                                <div class="pay-card" id="optTransferencia" onclick="seleccionarPago('Transferencia')">TRANSFERENCIA</div>
+                            </div>
+                        </div>
+
+                        <button type="button" id="btnAgregar" class="btn btn-accent" style="margin-top:10px">
+                            AÑADIR AL CARRITO
+                        </button>
+                    </form>
+                </div>
+
+                <div class="carrito-container">
+                    <div class="card">
+                        <h3>Detalle de Venta</h3>
+                        <div id="itemsCarrito">
+                            <p style="color: var(--gray); font-style: italic; font-size: 0.8rem;">El carrito está vacío</p>
+                        </div>
+                        <div class="total-box">
+                            <span>Total:</span>
+                            <span id="totalVenta">$ 0.00</span>
+                        </div>
+                        <button id="btnVender" class="btn btn-primary" style="background-color: var(--success); margin-top: 20px;" disabled>
+                            CONFIRMAR VENTA
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from './firebase-config.js';
+        import { collection, addDoc, getDocs, getDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { cargarSidebar } from './sidebar.js';
+        import { verificarAcceso, sanitizar, renderSeguro } from './security.js';
+
+        let nombreOperador = "";
+        let metodoPagoActivo = "Efectivo";
+        let carrito = [];
+        let stockNombres = {};
+        let acumuladoTurno = 0;
+
+        verificarAcceso(['operario-apuntes', 'supervisor-apuntes', 'adm-eco', 'superusuario']).then(info => {
+            cargarSidebar('apuntes');
+            nombreOperador = info.nombreReal || info.user.email.split('@')[0];
+            renderSeguro(document.getElementById('displayOperador'), nombreOperador);
+            cargarDatalist();
+        });
+
+        async function cargarDatalist() {
+            const snap = await getDocs(collection(db, "stock"));
+            const dl = document.getElementById('listaMateriales');
+            snap.forEach(d => {
+                const data = d.data();
+                stockNombres[data.nombre] = data.precio;
+                const opt = document.createElement('option');
+                opt.value = data.nombre;
+                dl.appendChild(opt);
+            });
+        }
+
+        window.seleccionarPago = (metodo) => {
+            metodoPagoActivo = metodo;
+            document.getElementById('optEfectivo').classList.toggle('selected', metodo === 'Efectivo');
+            document.getElementById('optTransferencia').classList.toggle('selected', metodo === 'Transferencia');
+        };
+
+        const scanInput = document.getElementById('scanInput');
+        scanInput.addEventListener('change', async () => {
+            const codigo = scanInput.value.trim();
+            if(!codigo) return;
+            try {
+                const docSnap = await getDoc(doc(db, "stock", codigo));
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    agregarAlCarrito(data.nombre, 1, data.precio);
+                    scanInput.value = "";
+                } else {
+                    alert("Código no encontrado");
+                    scanInput.value = "";
+                }
+            } catch (e) { console.error(e); }
+        });
+
+        document.getElementById('busquedaMaterial').addEventListener('input', (e) => {
+            const precio = stockNombres[e.target.value];
+            document.getElementById('monto').value = precio ? precio : "";
+        });
+
+        document.getElementById('btnAgregar').onclick = () => {
+            const material = document.getElementById('busquedaMaterial').value;
+            const cant = parseInt(document.getElementById('cantidad').value);
+            const precio = parseFloat(document.getElementById('monto').value);
+            if (!material || !precio) return alert("Seleccione material");
+            agregarAlCarrito(material, cant, precio);
+            document.getElementById('busquedaMaterial').value = "";
+            document.getElementById('monto').value = "";
+        };
+
+        function agregarAlCarrito(material, cant, precioUni) {
+            carrito.push({ material: sanitizar(material), cant, subtotal: cant * precioUni });
+            renderizarCarrito();
+        }
+
+        window.eliminarItem = (index) => {
+            carrito.splice(index, 1);
+            renderizarCarrito();
+        };
+
+        function renderizarCarrito() {
+            const container = document.getElementById('itemsCarrito');
+            const totalLabel = document.getElementById('totalVenta');
+            container.innerHTML = "";
+            let total = 0;
+
+            if(carrito.length === 0) {
+                container.innerHTML = `<p style="color: var(--gray); font-style: italic; font-size: 0.8rem;">El carrito está vacío</p>`;
+            }
+
+            carrito.forEach((item, index) => {
+                total += item.subtotal;
+                container.innerHTML += `
+                    <div class="item-carrito">
+                        <button class="btn-borrar" onclick="eliminarItem(${index})" title="Eliminar">🗑</button>
+                        <div class="item-info">
+                            <strong>${item.cant}x</strong> ${item.material}
+                        </div>
+                        <div style="font-weight: 600; font-size: 0.85rem;">$ ${item.subtotal.toFixed(2)}</div>
+                    </div>`;
+            });
+
+            totalLabel.innerText = `$ ${total.toFixed(2)}`;
+            document.getElementById('btnVender').disabled = carrito.length === 0;
+        }
+
+        document.getElementById('btnVender').onclick = async () => {
+            const btn = document.getElementById('btnVender');
+            btn.disabled = true;
+            btn.innerText = "PROCESANDO...";
+
+            const totalVenta = carrito.reduce((acc, i) => acc + i.subtotal, 0);
+
+            const ventaFinal = {
+                items: carrito,
+                total: totalVenta,
+                metodoPago: metodoPagoActivo,
+                operador: nombreOperador,
+                sector: "Apuntes",
+                fecha: new Date().toISOString().split('T')[0],
+                timestamp: serverTimestamp()
+            };
+
+            try {
+                await addDoc(collection(db, "ventas"), ventaFinal);
+                acumuladoTurno += totalVenta;
+                document.getElementById('totalTurno').innerText = `$ ${acumuladoTurno.toFixed(2)}`;
+                alert("✅ Venta registrada");
+                carrito = [];
+                renderizarCarrito();
+                scanInput.focus();
+            } catch (error) {
+                alert("Error al registrar");
+                btn.disabled = false;
+            }
+        };
+    </script>
+</body>
+</html>
