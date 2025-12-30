@@ -14,7 +14,7 @@
             height: 100vh; 
             display: flex; 
             margin: 0;
-            background-color: var(--dark); /* Color de respaldo si la imagen falla */
+            background-color: var(--dark);
         }
 
         .login-card { 
@@ -28,15 +28,14 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        /* Ajuste manual para el título del login con la línea amarilla característica */
         .login-card h2 {
             text-align: center;
             margin-top: 0;
             font-size: 1.5rem;
-            border-bottom: 3px solid var(--accent); /* Línea Amarilla */
+            border-bottom: 3px solid var(--accent);
             padding-bottom: 10px;
             margin-bottom: 15px;
-            text-transform: none; /* Evita mayúsculas forzadas del style.css si prefieres así */
+            text-transform: none;
         }
     </style>
 </head>
@@ -70,19 +69,20 @@
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { setPersistence, browserSessionPersistence, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { 
+            setPersistence, 
+            browserSessionPersistence, 
+            browserLocalPersistence, 
+            signInWithEmailAndPassword 
+        } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        // Punto 2: Importamos la herramienta de sanitización del security centralizado
         import { sanitizar } from './security.js';
 
         const loginForm = document.getElementById('loginForm');
         const mensaje = document.getElementById('mensaje');
         const btnEntrar = document.getElementById('btnEntrar');
 
-        // Limpieza de sesión al cargar para mayor seguridad
-        window.onload = () => { auth.signOut(); };
-
-        // Mostrar errores de tiempo de espera (timeout) si vienen por URL
+        // Al cargar la página, mostramos mensajes si hay redirección por inactividad
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('reason') === 'timeout') {
             mensaje.style.color = "var(--accent)";
@@ -92,32 +92,38 @@
         loginForm.onsubmit = async (e) => {
             e.preventDefault();
             
-            // UI Feedback
             btnEntrar.disabled = true;
             btnEntrar.innerText = "⏳ Verificando...";
             mensaje.style.color = "var(--primary)";
             mensaje.innerText = "Procesando ingreso...";
 
-            // BLINDAJE: Sanitizamos el correo antes de procesarlo
             const email = sanitizar(document.getElementById('usuario').value.trim().toLowerCase());
             const pass = document.getElementById('password').value;
 
             try {
-                // Seguridad: La sesión solo dura mientras el navegador esté abierto
-                await setPersistence(auth, browserSessionPersistence);
-                
-                // Intento de autenticación en Firebase
+                // 1. Primero logueamos para poder consultar Firestore
                 const userCredential = await signInWithEmailAndPassword(auth, email, pass);
-                
-                // Verificación de Rol en Firestore (Capa extra de seguridad)
+                const user = userCredential.user;
+
+                // 2. Verificamos el Rol en Firestore para decidir la persistencia
                 const docSnap = await getDoc(doc(db, "usuarios", email));
 
                 if (docSnap.exists()) {
+                    const rol = docSnap.data().rol;
+                    
+                    // Definimos los roles que NO deben quedar abiertos
+                    const jerarquicos = ['supervisor-apuntes', 'supervisor-fotocop', 'adm-eco', 'superusuario'];
+                    
+                    // Si es jerárquico usamos Session (se borra al cerrar), si es operativo Local (permanece)
+                    const persistencia = jerarquicos.includes(rol) ? browserSessionPersistence : browserLocalPersistence;
+
+                    // 3. Aplicamos la persistencia detectada
+                    await auth.setPersistence(persistencia);
+
                     mensaje.style.color = "var(--success)";
                     mensaje.innerText = "✅ ¡Acceso concedido!";
                     setTimeout(() => { window.location.href = "inicio.html"; }, 800);
                 } else {
-                    // Si el usuario está en Auth pero no en la tabla de usuarios autorizados
                     await auth.signOut();
                     mensaje.style.color = "var(--danger)";
                     mensaje.innerText = "⚠️ Usuario no autorizado en la base de datos.";
@@ -131,7 +137,6 @@
                 btnEntrar.innerText = "Entrar al Sistema";
                 mensaje.style.color = "var(--danger)";
                 
-                // Mensajes de error profesionales (no revelan si el usuario existe o no)
                 if (error.code === 'auth/invalid-credential') {
                     mensaje.innerText = "❌ Correo o contraseña incorrectos.";
                 } else if (error.code === 'auth/too-many-requests') {
