@@ -2,28 +2,59 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>SISTEMA | Gestión de Usuarios Crítica</title>
+    <title>SISTEMA | Gestión de Usuarios</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-        .admin-layout { display: grid; grid-template-columns: 380px 1fr; gap: 25px; }
-        .rol-badge {
-            padding: 4px 8px;
-            border-radius: 6px;
-            font-size: 0.75rem;
-            font-weight: bold;
-            text-transform: uppercase;
+        /* Layout más espacioso y centrado */
+        .admin-main-container {
+            display: flex;
+            flex-direction: column;
+            gap: 30px;
+            align-items: flex-start;
         }
-        .badge-super { background: #ffeaa7; color: #d63031; border: 1px solid #fab1a0; }
-        .badge-admin { background: #dfe6e9; color: var(--primary); }
-        .badge-op { background: #f1f2f6; color: var(--gray); }
-        
-        .danger-zone {
-            margin-top: 20px;
-            padding: 15px;
-            border: 1px dashed var(--danger);
-            border-radius: 8px;
-            background: rgba(231, 76, 60, 0.05);
+
+        .form-user-card {
+            width: 100%;
+            max-width: 650px;
+            border-top: 5px solid var(--danger);
+        }
+
+        /* Estilo de la Tabla de Usuarios */
+        .user-list-card {
+            width: 100%;
+        }
+
+        .rol-badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            display: inline-block;
+        }
+        .badge-super { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
+        .badge-admin { background: #d1ecf1; color: #0c5460; }
+        .badge-staff { background: #e2e3e5; color: #383d41; }
+
+        /* Botón eliminar minimalista */
+        .btn-trash {
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 1rem;
+            color: #ccc;
+            transition: all 0.2s;
+            padding: 5px;
+        }
+        .btn-trash:hover {
+            color: var(--danger);
+            transform: scale(1.1);
+        }
+
+        .user-info-text {
+            font-size: 0.85rem;
+            line-height: 1.2;
         }
     </style>
 </head>
@@ -32,58 +63,66 @@
 
     <div class="main-content">
         <div class="container">
-            <h2 style="color: var(--danger); border-bottom-color: var(--danger);">🛡️ Gestión de Credenciales y Roles</h2>
+            <h2 style="color: var(--danger); border-bottom-color: var(--danger);">🛡️ Seguridad y Accesos</h2>
             
-            <div class="admin-layout">
-                <div class="card">
-                    <h3>Alta de Nuevo Usuario</h3>
-                    <p style="font-size: 0.8rem; color: var(--gray); margin-bottom: 15px;">
-                        Nota: El usuario ya debe estar registrado en Firebase Auth previamente.
+            <div class="admin-main-container">
+                <div class="card form-user-card">
+                    <h3>Registrar Nuevo Operador</h3>
+                    <p style="font-size: 0.8rem; color: var(--gray); margin-bottom: 20px;">
+                        Asigne permisos a correos ya registrados en el sistema de autenticación.
                     </p>
+                    
                     <form id="formUser">
-                        <div class="form-group">
-                            <label>Correo Electrónico (ID):</label>
-                            <input type="email" id="userEmail" placeholder="ejemplo@correo.com" required>
+                        <div class="grid-estado" style="display: grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:0;">
+                            <div class="form-group">
+                                <label>Email Institucional:</label>
+                                <input type="email" id="userEmail" placeholder="usuario@gmail.com" required>
+                            </div>
+                            <div class="form-group">
+                                <label>Nombre y Apellido:</label>
+                                <input type="text" id="userNombre" placeholder="Ej: Juan Pérez" required>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Nombre Completo:</label>
-                            <input type="text" id="userNombre" placeholder="Juan Pérez" required>
+
+                        <div class="grid-estado" style="display: grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:0;">
+                            <div class="form-group">
+                                <label>Rol de Acceso:</label>
+                                <select id="userRol" required>
+                                    <option value="" disabled selected>Seleccione un nivel...</option>
+                                    <option value="operario-apuntes">Operario Apuntes</option>
+                                    <option value="operario-fotocop">Operario Fotocopiadora</option>
+                                    <option value="supervisor-apuntes">Supervisor Apuntes</option>
+                                    <option value="supervisor-fotocop">Supervisor Fotocopiadora</option>
+                                    <option value="adm-eco">Administrador General</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Sede / Unidad:</label>
+                                <select id="userUnidad" required>
+                                    <option value="eco">Económicas (ECO)</option>
+                                    <option value="global">Global (Administración)</option>
+                                </select>
+                            </div>
                         </div>
-                        <div class="form-group">
-                            <label>Rol Asignado:</label>
-                            <select id="userRol" required>
-                                <option value="operario-apuntes">Operario Apuntes</option>
-                                <option value="operario-fotocop">Operario Fotocopiadora</option>
-                                <option value="supervisor-apuntes">Supervisor Apuntes</option>
-                                <option value="supervisor-fotocop">Supervisor Fotocopiadora</option>
-                                <option value="adm-eco">Administrador ECO</option>
-                                <option value="superusuario">Superusuario (CUIDADO)</option>
-                            </select>
-                        </div>
-                        <div class="form-group">
-                            <label>Unidad Académica:</label>
-                            <select id="userUnidad" required>
-                                <option value="eco">Económicas (ECO)</option>
-                                <option value="global">Global (Solo Superusuario)</option>
-                            </select>
-                        </div>
-                        <button type="submit" class="btn btn-primary">💾 Guardar Permisos</button>
+
+                        <button type="submit" class="btn" style="background: var(--danger); margin-top:10px;">
+                            Habilitar Credenciales
+                        </button>
                     </form>
                 </div>
 
-                <div class="card">
-                    <h3>Usuarios con Acceso al Sistema</h3>
+                <div class="card user-list-card">
+                    <h3>Personal con Acceso</h3>
                     <div class="table-container">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Nombre / Email</th>
-                                    <th>Rol / Unidad</th>
-                                    <th>Acciones</th>
+                                    <th>Usuario</th>
+                                    <th>Nivel de Acceso</th>
+                                    <th style="text-align: center;">Acción</th>
                                 </tr>
                             </thead>
-                            <tbody id="tablaUsuarios">
-                                </tbody>
+                            <tbody id="tablaUsuarios"></tbody>
                         </table>
                     </div>
                 </div>
@@ -93,20 +132,19 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, doc, getDocs, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { cargarSidebar } from './sidebar.js';
-        import { verificarAcceso, sanitizar, renderSeguro } from './security.js';
+        import { verificarAcceso, sanitizar } from './security.js';
 
         let miCorreo = "";
 
-        // 1. BLOQUEO DE SEGURIDAD NIVEL 1: Solo Superusuario
+        // Solo el superusuario entra aquí
         verificarAcceso(['superusuario']).then(info => {
             miCorreo = info.user.email;
             cargarSidebar('usuarios');
             escucharUsuarios();
         });
 
-        // 2. ESCUCHAR USUARIOS EN TIEMPO REAL
         function escucharUsuarios() {
             onSnapshot(collection(db, "usuarios"), (snapshot) => {
                 const tbody = document.getElementById('tablaUsuarios');
@@ -117,25 +155,28 @@
                     const id = d.id;
                     const esMiPropioUsuario = id === miCorreo;
                     
+                    // Lógica de Badges
+                    let badgeClass = "badge-staff";
+                    if(u.rol === 'superusuario') badgeClass = "badge-super";
+                    else if(u.rol === 'adm-eco') badgeClass = "badge-admin";
+
                     const tr = document.createElement('tr');
                     tr.innerHTML = `
                         <td>
-                            <strong>${sanitizar(u.nombre)}</strong><br>
-                            <small style="color:var(--gray)">${id}</small>
+                            <div class="user-info-text">
+                                <strong>${sanitizar(u.nombre)}</strong><br>
+                                <small style="color:var(--gray)">${id}</small>
+                            </div>
                         </td>
                         <td>
-                            <span class="rol-badge ${u.rol === 'superusuario' ? 'badge-super' : 'badge-admin'}">
-                                ${u.rol}
-                            </span><br>
-                            <small>${u.unidad.toUpperCase()}</small>
+                            <span class="rol-badge ${badgeClass}">${u.rol}</span>
+                            <small style="margin-left:5px; color:var(--gray)">(${u.unidad.toUpperCase()})</small>
                         </td>
-                        <td>
-                            <button class="btn-delete" 
-                                    style="background:none; color:var(--danger); border:none; cursor:pointer; font-weight:bold;"
-                                    ${esMiPropioUsuario ? 'disabled' : ''} 
-                                    onclick="eliminarUsuario('${id}')">
-                                ${esMiPropioUsuario ? '👤 (Tú)' : '🗑️ Quitar'}
-                            </button>
+                        <td style="text-align: center;">
+                            ${esMiPropioUsuario ? 
+                                '<small style="color:var(--primary); font-weight:bold;">TÚ</small>' : 
+                                `<button class="btn-trash" onclick="eliminarUsuario('${id}')" title="Revocar Acceso">🗑️</button>`
+                            }
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -143,7 +184,6 @@
             });
         }
 
-        // 3. GUARDAR USUARIO (Nivel 2 de Blindaje: Sanitización)
         document.getElementById('formUser').onsubmit = async (e) => {
             e.preventDefault();
             
@@ -152,8 +192,9 @@
             const rol = document.getElementById('userRol').value;
             const unidad = document.getElementById('userUnidad').value;
 
-            if (rol === 'superusuario' && unidad !== 'global') {
-                return alert("⚠️ Un Superusuario debe ser de unidad 'global'");
+            // BLINDAJE EXTRA: Evitar creación de superusuario por consola o manipulación de DOM
+            if (rol === 'superusuario') {
+                return alert("⚠️ Acción no permitida. Solo puede existir un Superusuario maestro.");
             }
 
             try {
@@ -163,21 +204,19 @@
                     unidad,
                     fechaAlta: new Date().toISOString()
                 });
-                alert("✅ Usuario configurado correctamente.");
+                alert("✅ Credenciales asignadas con éxito.");
                 document.getElementById('formUser').reset();
             } catch (error) {
-                console.error(error);
-                alert("❌ Error al guardar en base de datos.");
+                alert("❌ Error de permisos en la base de datos.");
             }
         };
 
-        // 4. ELIMINAR ACCESO
         window.eliminarUsuario = async (id) => {
-            if (confirm(`¿Está seguro de revocar el acceso a ${id}? El usuario ya no podrá entrar al sistema.`)) {
+            if (confirm(`¿Revocar permanentemente el acceso a ${id}?`)) {
                 try {
                     await deleteDoc(doc(db, "usuarios", id));
                 } catch (error) {
-                    alert("No se pudo eliminar el permiso.");
+                    alert("No tiene permisos para esta acción.");
                 }
             }
         };

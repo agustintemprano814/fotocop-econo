@@ -5,27 +5,80 @@
     <title>Fotocop-Econo | Gestión de Stock</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <style>
+        .admin-tools {
+            display: none; 
+            background: #fff;
+            padding: 15px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 1px solid #ddd;
+            gap: 15px;
+            justify-content: flex-end;
+        }
+        .btn-export { background-color: #27ae60; color: white; width: auto; padding: 10px 20px; font-size: 0.8rem; }
+        .btn-danger-zone { background-color: var(--danger); color: white; width: auto; padding: 10px 20px; font-size: 0.8rem; }
+        
+        /* Contenedor principal alineado a la izquierda */
+        .stock-main-layout {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Alinea contenido a la izquierda */
+            width: 100%;
+        }
+        
+        /* Formulario al 75% */
+        .form-container-card {
+            width: 75%;
+            max-width: 850px;
+            margin-left: 0; /* Asegura alineación izquierda */
+            margin-bottom: 30px;
+        }
+
+        /* Historial al 100% en la base */
+        .historial-full-width {
+            width: 100%;
+            margin-top: 20px;
+        }
+
+        .table-scroll {
+            max-height: 500px;
+            overflow-y: auto;
+        }
+
+        /* Ajuste responsivo */
+        @media (max-width: 768px) {
+            .form-container-card { width: 100%; }
+        }
+    </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar"></div>
 
     <div class="main-content">
         <div class="container">
+            <div id="zonaSuper" class="admin-tools">
+                <button onclick="exportarInventario()" class="btn btn-export">📊 Exportar Inventario</button>
+                <button onclick="borrarBaseCompleta()" class="btn btn-danger-zone">⚠️ Borrar Todo el Stock</button>
+            </div>
+
             <h2>📦 Gestión de Stock e Inventario</h2>
 
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <span>Total Artículos</span>
+                    <span class="kpi-title">Total Artículos</span>
+                    <div class="kpi-line"></div>
                     <h2 id="totalArticulos">0</h2>
                 </div>
-                <div class="kpi-card accent">
-                    <span>Último Movimiento</span>
+                <div class="kpi-card">
+                    <span class="kpi-title">Último Movimiento</span>
+                    <div class="kpi-line"></div>
                     <h2 id="lastMove" style="font-size: 1rem;">-</h2>
                 </div>
             </div>
 
-            <div class="grid-estado">
-                <div class="card">
+            <div class="stock-main-layout">
+                <div class="card form-container-card">
                     <h3>Actualizar / Crear Material</h3>
                     <form id="formStock">
                         <div class="form-group">
@@ -38,14 +91,14 @@
                             <input type="text" id="nombreMaterial" required>
                         </div>
 
-                        <div class="grid-estado" style="grid-template-columns: 1fr 1fr; margin-bottom:0; gap:10px;">
+                        <div class="grid-estado" style="display: grid; grid-template-columns: 1fr 1fr; gap:15px; margin-bottom:15px;">
                             <div class="form-group">
                                 <label>Precio de venta ($):</label>
                                 <input type="number" id="precio" step="0.01" required>
                             </div>
                             <div class="form-group">
                                 <label>Stock Actual:</label>
-                                <input type="number" id="cantidadStock" value="0" readonly style="background: #eee;">
+                                <input type="number" id="cantidadStock" value="0" readonly style="background: #f4f4f4;">
                             </div>
                         </div>
 
@@ -58,20 +111,20 @@
                     </form>
                 </div>
 
-                <div class="card">
-                    <h3>Últimos Movimientos</h3>
-                    <div class="table-container">
+                <div class="card historial-full-width">
+                    <h3>Últimos 50 Movimientos de Inventario</h3>
+                    <div class="table-container table-scroll">
                         <table>
                             <thead>
                                 <tr>
-                                    <th>Fecha</th>
+                                    <th>Fecha / Hora</th>
+                                    <th>Código</th>
                                     <th>Material</th>
-                                    <th>Cant.</th>
+                                    <th>Ajuste</th>
                                     <th>Operador</th>
                                 </tr>
                             </thead>
-                            <tbody id="tablaHistorial">
-                                </tbody>
+                            <tbody id="tablaHistorial"></tbody>
                         </table>
                     </div>
                 </div>
@@ -81,44 +134,41 @@
 
     <script type="module">
         import { db } from './firebase-config.js';
-        import { collection, doc, getDoc, setDoc, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { collection, doc, getDoc, getDocs, setDoc, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { cargarSidebar } from './sidebar.js';
         import { verificarAcceso, sanitizar } from './security.js';
 
         let userMail = "";
 
-        // 1. Seguridad y Sidebar
-        verificarAcceso(['supervisor', 'administrador', 'superusuario']).then(info => {
+        verificarAcceso(['supervisor-apuntes', 'adm-eco', 'superusuario']).then(info => {
             userMail = info.user.email;
             cargarSidebar('stock');
             escucharCambios();
+            
+            if(info.rol === 'superusuario') {
+                document.getElementById('zonaSuper').style.display = 'flex';
+            }
         });
 
         const form = document.getElementById('formStock');
         const inputCodigo = document.getElementById('codigoBarras');
 
-        // 2. Lógica del Lector de Barras: Al detectar un código, busca automáticamente
         inputCodigo.addEventListener('change', async () => {
             const code = inputCodigo.value.trim();
             if (!code) return;
-
-            const docRef = doc(db, "stock", code);
-            const docSnap = await getDoc(docRef);
-
+            const docSnap = await getDoc(doc(db, "stock", code));
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 document.getElementById('nombreMaterial').value = data.nombre;
                 document.getElementById('precio').value = data.precio;
                 document.getElementById('cantidadStock').value = data.cantidad;
             } else {
-                // Si el código es nuevo, limpiamos para crear
                 document.getElementById('nombreMaterial').value = "";
                 document.getElementById('precio').value = "";
                 document.getElementById('cantidadStock').value = 0;
             }
         });
 
-        // 3. Guardar y Registrar Movimiento (Punto 2: Sanitización)
         form.onsubmit = async (e) => {
             e.preventDefault();
             const code = sanitizar(inputCodigo.value.trim());
@@ -127,55 +177,72 @@
             const ajuste = parseInt(document.getElementById('ajusteStock').value);
             const stockActual = parseInt(document.getElementById('cantidadStock').value);
 
-            if (!code) return alert("Ingrese un código");
-
             try {
-                // Actualizar Stock
                 const nuevoStock = stockActual + ajuste;
                 await setDoc(doc(db, "stock", code), {
                     nombre, precio, cantidad: nuevoStock, ultimaMod: serverTimestamp()
                 }, { merge: true });
 
-                // Registrar en Historial (Movimiento)
                 await addDoc(collection(db, "movimientos_stock"), {
-                    codigo: code,
-                    nombre: nombre,
-                    ajuste: ajuste,
-                    operador: userMail,
-                    fecha: serverTimestamp()
+                    codigo: code, nombre, ajuste, operador: userMail, fecha: serverTimestamp()
                 });
 
-                alert("Stock actualizado");
+                alert("✅ Stock actualizado");
                 form.reset();
                 inputCodigo.focus();
-            } catch (err) {
-                console.error(err);
-                alert("Error al guardar");
-            }
+            } catch (err) { alert("Error al guardar"); }
         };
 
-        // 4. Escucha en tiempo real (KPIs y Tabla)
         function escucharCambios() {
-            // Historial (Punto 3: Blindaje de lectura)
-            const q = query(collection(db, "movimientos_stock"), orderBy("fecha", "desc"), limit(10));
+            onSnapshot(collection(db, "stock"), (snap) => {
+                document.getElementById('totalArticulos').innerText = snap.size;
+            });
+
+            const q = query(collection(db, "movimientos_stock"), orderBy("fecha", "desc"), limit(50));
             onSnapshot(q, (snapshot) => {
                 const tbody = document.getElementById('tablaHistorial');
                 tbody.innerHTML = "";
                 snapshot.forEach(doc => {
                     const mov = doc.data();
-                    const fila = document.createElement('tr');
-                    const fechaTxt = mov.fecha ? mov.fecha.toDate().toLocaleString() : "...";
-                    
-                    fila.innerHTML = `
-                        <td>${fechaTxt}</td>
-                        <td>${mov.nombre}</td>
-                        <td style="color: ${mov.ajuste >= 0 ? 'green' : 'red'}"><b>${mov.ajuste}</b></td>
-                        <td>${mov.operador.split('@')[0]}</td>
-                    `;
-                    tbody.appendChild(fila);
+                    const fechaTxt = mov.fecha ? mov.fecha.toDate().toLocaleString('es-AR') : "...";
+                    tbody.innerHTML += `
+                        <tr>
+                            <td><small>${fechaTxt}</small></td>
+                            <td><small>${mov.codigo}</small></td>
+                            <td>${mov.nombre}</td>
+                            <td style="color: ${mov.ajuste >= 0 ? 'green' : 'red'}"><b>${mov.ajuste >= 0 ? '+' : ''}${mov.ajuste}</b></td>
+                            <td>${mov.operador.split('@')[0]}</td>
+                        </tr>`;
                 });
             });
         }
+
+        window.exportarInventario = async () => {
+            const snap = await getDocs(collection(db, "stock"));
+            let csv = "Codigo,Materia,Precio,Stock Disponible\n";
+            snap.forEach(d => {
+                const i = d.data();
+                csv += `${d.id},${i.nombre},${i.precio},${i.cantidad}\n`;
+            });
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement("a");
+            link.href = URL.createObjectURL(blob);
+            link.setAttribute("download", `Inventario_${new Date().toLocaleDateString()}.csv`);
+            link.click();
+        };
+
+        window.borrarBaseCompleta = async () => {
+            if (!confirm("🚨 ATENCIÓN: ¿Está seguro de borrar TODO el inventario?")) return;
+            if (prompt("Escriba 'BORRAR TODO' para confirmar:") !== "BORRAR TODO") return;
+
+            try {
+                const snap = await getDocs(collection(db, "stock"));
+                const batch = writeBatch(db);
+                snap.forEach(d => batch.delete(d.ref));
+                await batch.commit();
+                alert("✨ Inventario reseteado.");
+            } catch (e) { alert("Error de permisos."); }
+        };
     </script>
 </body>
 </html>

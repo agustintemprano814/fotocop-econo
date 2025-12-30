@@ -17,65 +17,92 @@ export function cargarSidebar(paginaActiva) {
 
         getDoc(doc(db, "usuarios", user.email))
             .then((docSnap) => {
-                // Si el documento no existe, por defecto es un rol sin permisos
                 const rol = docSnap.exists() ? docSnap.data().rol : "restringido";
 
-                // Definimos los grupos de roles para facilitar la lectura
-                const todos = ['operario-apuntes', 'operario-fotocop', 'supervisor-apuntes', 'supervisor-fotocop', 'adm-eco', 'superusuario'];
-                const mandosMedios = ['supervisor-apuntes', 'supervisor-fotocop', 'adm-eco', 'superusuario'];
-                const admins = ['adm-eco', 'superusuario'];
-
-                const menuItems = [
-                    { id: 'inicio', icon: '🏠', label: 'Inicio', url: 'inicio.html', roles: todos },
-                    
-                    // --- SECTOR VENTAS ---
-                    { id: 'apuntes', icon: '📚', label: 'Apuntes', url: 'apuntes.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'adm-eco', 'superusuario'] },
-                    { id: 'ventas', icon: '🖨️', label: 'Fotocopiadora', url: 'ventas.html', roles: ['operario-fotocop', 'supervisor-fotocop', 'adm-eco', 'superusuario'] },
-                    
-                    // --- SECTOR GESTIÓN ---
-                    { id: 'stock', icon: '📦', label: 'Gestión Stock', url: 'stock.html', roles: ['supervisor-apuntes', 'adm-eco', 'superusuario'] },
-                    { id: 'insumos', icon: '🛠️', label: 'Insumos', url: 'insumos.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
-                    
-                    // --- SECTOR ADMINISTRATIVO ---
-                    { id: 'cierre', icon: '📑', label: 'Cierres Caja', url: 'cierres.html', roles: mandosMedios },
-                    { id: 'rep', icon: '📂', label: 'Reportes', url: 'reportes.html', roles: admins },
-                    
-                    // --- SECTOR SEGURIDAD CRÍTICA ---
-                    { id: 'usuarios', icon: '🛡️', label: 'Usuarios / Seguridad', url: 'usuarios.html', roles: ['superusuario'] },
-                    { id: 'config', icon: '⚙️', label: 'Configuración', url: 'configuracion.html', roles: ['superusuario'] }
+                // Estructura completa de bloques y páginas
+                const secciones = [
+                    {
+                        titulo: "Principal",
+                        items: [
+                            { id: 'inicio', icon: '🏠', label: 'Inicio', url: 'inicio.html', roles: ['operario-apuntes', 'operario-fotocop', 'supervisor-apuntes', 'supervisor-fotocop', 'adm-eco', 'superusuario'] }
+                        ]
+                    },
+                    {
+                        titulo: "Punto de Venta",
+                        items: [
+                            { id: 'apuntes', icon: '📚', label: 'Venta Apuntes', url: 'apuntes.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'adm-eco', 'superusuario'] },
+                            { id: 'ventas', icon: '🖨️', label: 'Fotocopiadora', url: 'ventas.html', roles: ['operario-fotocop', 'supervisor-fotocop', 'adm-eco', 'superusuario'] }
+                        ]
+                    },
+                    {
+                        titulo: "Gestión de Almacén",
+                        items: [
+                            { id: 'stock', icon: '🛒', label: 'Stock Apuntes', url: 'stock.html', roles: ['supervisor-apuntes', 'adm-eco', 'superusuario'] },
+                            { id: 'insumos', icon: '🛠️', label: 'Insumos', url: 'insumos.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
+                            { id: 'estado', icon: '⚙️', label: 'Estado Máquinas', url: 'estado.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
+                            { id: 'editor', icon: '✏️', label: 'Editor Registros', url: 'editor.html', roles: ['supervisor-fotocop', 'supervisor-apuntes', 'superusuario'] }
+                        ]
+                    },
+                    {
+                        titulo: "Administración",
+                        items: [
+                            { id: 'cierre', icon: '📑', label: 'Cierres Caja', url: 'cierres.html', roles: ['adm-eco', 'superusuario', 'supervisor-apuntes', 'supervisor-fotocop'] },
+                            { id: 'reportes', icon: '📂', label: 'Reportes', url: 'reportes.html', roles: ['adm-eco', 'superusuario'] }
+                        ]
+                    },
+                    {
+                        titulo: "Panel de Control",
+                        items: [
+                            { id: 'dash', icon: '📈', label: 'Dashboard Fin.', url: 'dashboard-financiero.html', roles: ['adm-eco', 'superusuario'] },
+                            { id: 'rendimiento', icon: '📉', label: 'Rendimiento Téc.', url: 'rendimiento.html', roles: ['adm-eco', 'superusuario'] }
+                        ]
+                    },
+                    {
+                        titulo: "Gestión de Sistemas",
+                        items: [
+                            { id: 'usuarios', icon: '👥', label: 'Usuarios', url: 'usuarios.html', roles: ['superusuario'] },
+                            { id: 'config', icon: '🛠️', label: 'Configuración', url: 'configuracion.html', roles: ['superusuario'] },
+                            { id: 'admin', icon: '📥', label: 'Importador', url: 'importador.html', roles: ['superusuario'] }
+                        ]
+                    }
                 ];
 
-                let htmlItems = '';
-                menuItems.forEach(item => {
-                    if (item.roles.includes(rol)) {
-                        const activeClass = item.id === paginaActiva ? 'active' : '';
-                        htmlItems += `
-                            <div class="sidebar-item ${activeClass}" onclick="window.location.href='${item.url}'">
-                                <span class="item-icon">${item.icon}</span> 
-                                <span class="item-label">${item.label}</span>
-                            </div>`;
-                    }
-                });
-
-                sidebarContainer.innerHTML = `
+                let htmlFinal = `
                     <div class="sidebar-logo-container">
                         <div class="logo-circle-wrapper">
                             <img src="https://linktr.ee/og/image/franjaeconounlp.jpg" alt="Logo">
                         </div>
                         <span class="logo-text">FOTOCOP-ECONO</span>
                     </div>
-                    
-                    <div class="menu-scroll-container">
-                        ${htmlItems}
-                    </div>
+                    <div class="menu-scroll-container">`;
 
+                secciones.forEach(seccion => {
+                    const itemsVisibles = seccion.items.filter(item => item.roles.includes(rol));
+                    
+                    if (itemsVisibles.length > 0) {
+                        // Título del Bloque (Actúa como separador visual en CSS)
+                        htmlFinal += `<div class="sidebar-section-title">${seccion.titulo}</div>`;
+                        
+                        itemsVisibles.forEach(item => {
+                            const activeClass = item.id === paginaActiva ? 'active' : '';
+                            htmlFinal += `
+                                <div class="sidebar-item ${activeClass}" onclick="window.location.href='${item.url}'">
+                                    <span class="item-icon">${item.icon}</span> 
+                                    <span class="item-label">${item.label}</span>
+                                </div>`;
+                        });
+                    }
+                });
+
+                htmlFinal += `</div>
                     <div class="sidebar-footer">
                         <div class="sidebar-item" id="btnSalir" style="color: #ff6b6b; border-top: 1px solid rgba(255,255,255,0.1);">
                             <span class="item-icon">🚪</span> 
                             <span class="item-label">Cerrar Sesión</span>
                         </div>
-                    </div>
-                `;
+                    </div>`;
+
+                sidebarContainer.innerHTML = htmlFinal;
 
                 const btnSalir = document.getElementById('btnSalir');
                 if (btnSalir) {
@@ -86,7 +113,7 @@ export function cargarSidebar(paginaActiva) {
             })
             .catch((error) => {
                 console.error("Error cargando el menú:", error);
-                sidebarContainer.innerHTML = '<div style="color:red; padding:20px; font-size:10px;">Error de autenticación de menú</div>';
+                sidebarContainer.innerHTML = '<div style="color:red; padding:20px; font-size:10px;">Error de autenticación</div>';
             });
     });
 }
