@@ -19,7 +19,7 @@ export function cargarSidebar(paginaActiva) {
             .then((docSnap) => {
                 const rol = docSnap.exists() ? docSnap.data().rol : "restringido";
 
-                // Estructura completa de bloques y páginas
+                // ESTRUCTURA ACTUALIZADA SEGÚN MATRIZ DE PERMISOS
                 const secciones = [
                     {
                         titulo: "Principal",
@@ -30,39 +30,39 @@ export function cargarSidebar(paginaActiva) {
                     {
                         titulo: "Punto de Venta",
                         items: [
-                            { id: 'apuntes', icon: '📚', label: 'Venta Apuntes', url: 'apuntes.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'adm-eco', 'superusuario'] },
-                            { id: 'ventas', icon: '🖨️', label: 'Fotocopiadora', url: 'ventas.html', roles: ['operario-fotocop', 'supervisor-fotocop', 'adm-eco', 'superusuario'] }
+                            { id: 'apuntes', icon: '📚', label: 'Venta Apuntes', url: 'apuntes.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'superusuario'] },
+                            { id: 'ventas', icon: '🖨️', label: 'Fotocopiadora', url: 'ventas.html', roles: ['operario-fotocop', 'supervisor-fotocop', 'superusuario'] }
                         ]
                     },
                     {
                         titulo: "Gestión de Almacén",
                         items: [
-                            { id: 'stock', icon: '🛒', label: 'Stock Apuntes', url: 'stock.html', roles: ['supervisor-apuntes', 'adm-eco', 'superusuario'] },
-                            { id: 'insumos', icon: '🛠️', label: 'Insumos', url: 'insumos.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
-                            { id: 'estado', icon: '⚙️', label: 'Estado Máquinas', url: 'estado.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
-                            { id: 'editor', icon: '✏️', label: 'Editor Registros', url: 'editor.html', roles: ['supervisor-fotocop', 'supervisor-apuntes', 'superusuario'] }
+                            { id: 'stock', icon: '🛒', label: 'Stock Apuntes', url: 'stock.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'adm-eco', 'superusuario'] },
+                            { id: 'insumos', icon: '🛠️', label: 'Insumos / Tóner', url: 'insumos.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
+                            { id: 'estado', icon: '⚙️', label: 'Estado Máquinas', url: 'estado.html', roles: ['operario-fotocop', 'supervisor-fotocop', 'adm-eco', 'superusuario'] },
+                            { id: 'editor', icon: '✏️', label: 'Editor Maestro', url: 'editor.html', roles: ['supervisor-fotocop', 'supervisor-apuntes', 'adm-eco', 'superusuario'] }
                         ]
                     },
                     {
                         titulo: "Administración",
                         items: [
-                            { id: 'cierre-apuntes', icon: '📚', label: 'Cierre Apuntes', url: 'cierre_apuntes.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'adm-eco', 'superusuario'] },
-                            { id: 'cierre-foto', icon: '🖨️', label: 'Cierre Fotocopiadora', url: 'cierres.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
-                            { id: 'reportes', icon: '📂', label: 'Reportes Globales', url: 'reportes.html', roles: ['adm-eco', 'superusuario'] }
+                            { id: 'cierre-apuntes', icon: '📚', label: 'Cierre Apuntes', url: 'cierre_apuntes.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'superusuario'] },
+                            { id: 'cierre-foto', icon: '🖨️', label: 'Cierre Fotocopiadora', url: 'cierres.html', roles: ['supervisor-fotocop', 'superusuario'] },
+                            { id: 'reportes', icon: '📂', label: 'Reportes Excel', url: 'reportes.html', roles: ['superusuario'] }
                         ]
                     },
                     {
-                        titulo: "Panel de Control",
+                        titulo: "Panel de Auditoría",
                         items: [
                             { id: 'dash', icon: '📈', label: 'Dashboard Fin.', url: 'dashboard-financiero.html', roles: ['adm-eco', 'superusuario'] },
-                            { id: 'rendimiento', icon: '📉', label: 'Rendimiento Téc.', url: 'rendimiento.html', roles: ['adm-eco', 'superusuario'] }
+                            { id: 'rendimiento', icon: '📉', label: 'Dashboard Técnico', url: 'rendimiento.html', roles: ['adm-eco', 'superusuario'] }
                         ]
                     },
                     {
-                        titulo: "Gestión de Sistemas",
+                        titulo: "Sistema",
                         items: [
                             { id: 'usuarios', icon: '👥', label: 'Usuarios', url: 'usuarios.html', roles: ['superusuario'] },
-                            { id: 'config', icon: '🛠️', label: 'Configuración', url: 'configuracion.html', roles: ['superusuario'] },
+                            { id: 'config', icon: '⚙️', label: 'Configuración', url: 'configuracio.html', roles: ['adm-eco', 'superusuario'] },
                             { id: 'admin', icon: '📥', label: 'Importador', url: 'importador.html', roles: ['superusuario'] }
                         ]
                     }
@@ -78,10 +78,10 @@ export function cargarSidebar(paginaActiva) {
                     <div class="menu-scroll-container">`;
 
                 secciones.forEach(seccion => {
+                    // Solo filtramos los items que el rol actual tiene permitido ver
                     const itemsVisibles = seccion.items.filter(item => item.roles.includes(rol));
                     
                     if (itemsVisibles.length > 0) {
-                        // Título del Bloque (Actúa como separador visual en CSS)
                         htmlFinal += `<div class="sidebar-section-title">${seccion.titulo}</div>`;
                         
                         itemsVisibles.forEach(item => {
