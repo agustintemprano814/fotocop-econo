@@ -124,9 +124,17 @@
                 <div class="card module-card" id="mod-admin" style="display:none;" onclick="toggleModulo(this)">
                     <span>📑</span>
                     <h3>Administración</h3>
+                    <p>Control de cajas y exportación por sector.</p>
                     <div class="module-options">
-                        <button class="btn btn-primary" onclick="location.href='cierres.html'">📑 Cierres de Caja</button>
-                        <button class="btn btn-primary" onclick="location.href='reportes.html'">📂 Reportes</button>
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); location.href='cierre_apuntes.html'">
+                            📚 Cierre Apuntes 
+                        </button>
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); location.href='cierres.html'">
+                            🖨️ Cierre Fotocopiadora
+                        </button>
+                        <button class="btn btn-primary" onclick="event.stopPropagation(); location.href='reportes.html'">
+                            📂 Exportar Reportes Globales
+                        </button>
                     </div>
                 </div>
 

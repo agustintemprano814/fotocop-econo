@@ -46,8 +46,9 @@ export function cargarSidebar(paginaActiva) {
                     {
                         titulo: "Administración",
                         items: [
-                            { id: 'cierre', icon: '📑', label: 'Cierres Caja', url: 'cierres.html', roles: ['adm-eco', 'superusuario', 'supervisor-apuntes', 'supervisor-fotocop'] },
-                            { id: 'reportes', icon: '📂', label: 'Reportes', url: 'reportes.html', roles: ['adm-eco', 'superusuario'] }
+                            { id: 'cierre-apuntes', icon: '📚', label: 'Cierre Apuntes', url: 'cierre_apuntes.html', roles: ['operario-apuntes', 'supervisor-apuntes', 'adm-eco', 'superusuario'] },
+                            { id: 'cierre-foto', icon: '🖨️', label: 'Cierre Fotocopiadora', url: 'cierres.html', roles: ['supervisor-fotocop', 'adm-eco', 'superusuario'] },
+                            { id: 'reportes', icon: '📂', label: 'Reportes Globales', url: 'reportes.html', roles: ['adm-eco', 'superusuario'] }
                         ]
                     },
                     {

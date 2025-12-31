@@ -2,45 +2,30 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Fotocop-Econo | Centro de Reportes</title>
+    <title>Fotocop-Econo | Centro de Auditoría</title>
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
     <style>
         .report-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
             margin-top: 30px;
         }
 
         .report-card {
             background: white;
             border-radius: 15px;
-            padding: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            padding: 20px;
+            box-shadow: var(--shadow);
             border-top: 5px solid var(--primary);
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            transition: transform 0.2s;
+            justify-content: space-between;
+            transition: 0.3s;
         }
-        .report-card:hover { transform: translateY(-5px); }
-
-        .report-card h3 {
-            margin: 0;
-            color: var(--secondary);
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-
-        .report-card p {
-            font-size: 0.9rem;
-            color: #64748b;
-            margin: 0;
-            line-height: 1.4;
-        }
+        .report-card:hover { transform: translateY(-3px); }
 
         .period-selector {
             background: #f8fafc;
@@ -51,48 +36,45 @@
             gap: 20px;
             align-items: center;
             border: 1px solid #e2e8f0;
+            margin-bottom: 20px;
         }
 
         .filter-item { display: flex; flex-direction: column; gap: 5px; }
-        .filter-item label { font-size: 0.8rem; font-weight: bold; color: var(--primary); }
-        .filter-item select { padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1; min-width: 150px; }
+        .filter-item label { font-size: 0.75rem; font-weight: bold; color: var(--primary); text-transform: uppercase; }
+        .filter-item select { padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1; }
 
         .btn-download {
             background: white;
             color: var(--secondary);
             border: 2px solid var(--secondary);
-            padding: 12px;
+            padding: 10px;
             border-radius: 8px;
             font-weight: bold;
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            transition: all 0.3s;
+            margin-top: 15px;
+            transition: 0.3s;
         }
-
-        .btn-download:hover {
-            background: var(--secondary);
-            color: white;
-        }
-
-        .btn-download:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
+        .btn-download:hover { background: var(--secondary); color: white; }
     </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar"></div>
 
-    <div class="main-content">
-        <div class="container" style="max-width: 1100px;">
-            <h2 style="margin-bottom: 25px;">📊 Centro de Reportes y Exportación</h2>
+    <main class="main-content">
+        <div class="container">
+            <h2 style="margin-bottom: 25px;">📊 Centro de Auditoría y Reportes</h2>
 
             <div class="period-selector">
                 <div class="filter-item">
-                    <label>Mes de Informe:</label>
+                    <label>Sector:</label>
+                    <select id="selectSector">
+                        <option value="Todos">Global (Todo)</option>
+                        <option value="Apuntes">Sector Apuntes</option>
+                        <option value="Fotocopiadora">Sector Fotocopiadora</option>
+                    </select>
+                </div>
+                <div class="filter-item">
+                    <label>Mes:</label>
                     <select id="selectMes">
                         <option value="0">Enero</option><option value="1">Febrero</option>
                         <option value="2">Marzo</option><option value="3">Abril</option>
@@ -105,42 +87,47 @@
                 <div class="filter-item">
                     <label>Año:</label>
                     <select id="selectAnio">
-                        <option value="2024">2024</option>
                         <option value="2025">2025</option>
+                        <option value="2024">2024</option>
                     </select>
-                </div>
-                <div style="flex-grow: 1; text-align: right; color: #94a3b8; font-size: 0.85rem;">
-                    Los reportes se descargan en formato Excel (.xlsx) de forma segura.
                 </div>
             </div>
 
             <div class="report-grid">
                 <div class="report-card">
-                    <h3>💰 Caja y Finanzas</h3>
-                    <p>Historial de cierres diarios, efectivo, transferencias y gastos operativos declarados por supervisión.</p>
-                    <button class="btn-download" onclick="exportarColeccion('cierres', 'Reporte_Cierres_Caja')">
-                        📥 Exportar Cierres
-                    </button>
+                    <div>
+                        <h3>💰 Cierres de Caja</h3>
+                        <p style="font-size:0.85rem; color:var(--gray)">Conciliación de efectivo, transferencias y diferencias por sector (Apuntes/Foto).</p>
+                    </div>
+                    <button class="btn-download" onclick="exportar('cierres_diarios', 'Auditoria_Cajas')">📥 Descargar Excel</button>
                 </div>
 
-                <div class="report-card" style="border-top-color: var(--secondary);">
-                    <h3>🖨️ Producción Técnica</h3>
-                    <p>Detalle de contadores iniciales y finales por máquina, consumo bruto y hojas no cobradas.</p>
-                    <button class="btn-download" onclick="exportarColeccion('lecturas_maquinas', 'Reporte_Lecturas_Tecnicas')">
-                        📥 Exportar Lecturas
-                    </button>
+                <div class="report-card" style="border-top-color: var(--accent);">
+                    <div>
+                        <h3>🖨️ Consumo Técnico</h3>
+                        <p style="font-size:0.85rem; color:var(--gray)">Contadores de máquinas, hojas netas impresas y detalle de copias no cobradas.</p>
+                    </div>
+                    <button class="btn-download" onclick="exportar('cierres_diarios', 'Consumo_Tecnico_Maquinas')">📥 Descargar Excel</button>
                 </div>
 
                 <div class="report-card" style="border-top-color: #28a745;">
-                    <h3>📈 Detalle de Ventas</h3>
-                    <p>Desglose de cada ticket emitido por los operarios: Simple faz, Doble faz, Anillados y Ajustes.</p>
-                    <button class="btn-download" onclick="exportarColeccion('ventas', 'Reporte_Ventas_Totales')">
-                        📥 Exportar Ventas
-                    </button>
+                    <div>
+                        <h3>📈 Detalle de Ventas</h3>
+                        <p style="font-size:0.85rem; color:var(--gray)">Historial de tickets individuales emitidos en el mostrador para análisis de productos.</p>
+                    </div>
+                    <button class="btn-download" onclick="exportar('ventas', 'Historico_Ventas')">📥 Descargar Excel</button>
+                </div>
+
+                <div class="report-card" style="border-top-color: var(--dark);">
+                    <div>
+                        <h3>📦 Movimientos de Stock</h3>
+                        <p style="font-size:0.85rem; color:var(--gray)">Consumo de resmas, tóner y variaciones de inventario de apuntes.</p>
+                    </div>
+                    <button class="btn-download" onclick="exportar('stock_movimientos', 'Auditoria_Stock')">📥 Descargar Excel</button>
                 </div>
             </div>
         </div>
-    </div>
+    </main>
 
     <script type="module">
         import { db } from './firebase-config.js';
@@ -148,93 +135,61 @@
         import { cargarSidebar } from './sidebar.js';
         import { verificarAcceso } from './security.js';
 
-        // --- FUNCIÓN DE SEGURIDAD ANTI-XSS ---
-        function sanitizarDatos(obj) {
-            const nuevoObj = {};
-            for (let clave in obj) {
-                if (typeof obj[clave] === 'string') {
-                    // Convertimos el contenido en texto plano para el Excel
-                    const temp = document.createElement('div');
-                    temp.textContent = obj[clave];
-                    nuevoObj[clave] = temp.innerHTML;
-                } else {
-                    nuevoObj[clave] = obj[clave];
-                }
-            }
-            return nuevoObj;
-        }
-
-        verificarAcceso(['administrador', 'superusuario']).then(() => {
+        verificarAcceso(['adm-eco', 'superusuario']).then(() => {
             cargarSidebar('reportes');
-        }).catch(err => {
-            window.location.href = "index.html";
         });
 
-        // Inicializar fechas
-        const fechaActual = new Date();
-        document.getElementById('selectMes').value = fechaActual.getMonth();
-        document.getElementById('selectAnio').value = fechaActual.getFullYear();
+        // Función Maestra para Aplanar Objetos (M1, M2, Caja, etc)
+        function aplanarObjeto(obj, prefijo = '') {
+            let res = {};
+            for (let k in obj) {
+                let prop = prefijo ? `${prefijo}_${k}` : k;
+                if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k])) {
+                    Object.assign(res, aplanarObjeto(obj[k], prop));
+                } else {
+                    res[prop] = obj[k];
+                }
+            }
+            return res;
+        }
 
-        window.exportarColeccion = async (nombreColeccion, nombreArchivo) => {
+        window.exportar = async (coleccion, nombreArchivo) => {
             const mes = parseInt(document.getElementById('selectMes').value);
             const anio = parseInt(document.getElementById('selectAnio').value);
-            
-            // Definir rango del mes seleccionado
-            const fechaInicio = new Date(anio, mes, 1);
-            const fechaFin = new Date(anio, mes + 1, 0, 23, 59, 59);
+            const fechaFiltro = `${anio}-${(mes + 1).toString().padStart(2, '0')}`; // Formato YYYY-MM
 
             const btn = event.currentTarget;
             btn.disabled = true;
-            const originalText = btn.innerText;
             btn.innerText = "⏳ Procesando...";
 
             try {
-                // El reporte siempre debe filtrar por fecha para no agotar la cuota de lectura
-                const q = query(
-                    collection(db, nombreColeccion),
-                    where("fecha", ">=", fechaInicio.toISOString().split('T')[0]),
-                    where("fecha", "<=", fechaFin.toISOString().split('T')[0])
-                );
+                const q = query(collection(db, coleccion));
+                const snap = await getDocs(q);
+                const datos = [];
 
-                const querySnapshot = await getDocs(q);
-                const datosExportar = [];
-
-                querySnapshot.forEach((doc) => {
-                    const rawData = doc.data();
-                    
-                    // APLICAMOS ESCUDO DE SEGURIDAD A LOS DATOS
-                    const dataLimpia = sanitizarDatos(rawData);
-
-                    // Formatear fechas para el Excel
-                    let fechaTexto = dataLimpia.fecha || "Sin fecha";
-                    if (rawData.timestamp && typeof rawData.timestamp.toDate === 'function') {
-                        fechaTexto = rawData.timestamp.toDate().toLocaleString();
+                snap.forEach(doc => {
+                    const raw = doc.data();
+                    // Filtro manual por fechaString (YYYY-MM-DD) para evitar problemas de índices complejos
+                    if (raw.fechaString && raw.fechaString.startsWith(fechaFiltro)) {
+                        const plano = aplanarObjeto(raw);
+                        datos.push({ ID: doc.id, ...plano });
                     }
-
-                    datosExportar.push({
-                        ID_REGISTRO: doc.id,
-                        FECHA_HORA: fechaTexto,
-                        ...dataLimpia
-                    });
                 });
 
-                if (datosExportar.length === 0) {
-                    alert("No hay registros en el mes seleccionado.");
+                if (datos.length === 0) {
+                    alert("No hay registros para este período.");
                 } else {
-                    // Generar Excel con SheetJS
-                    const worksheet = XLSX.utils.json_to_sheet(datosExportar);
-                    const workbook = XLSX.utils.book_new();
-                    XLSX.utils.book_append_sheet(workbook, worksheet, "Reporte");
-                    
-                    // Descargar archivo
-                    XLSX.writeFile(workbook, `${nombreArchivo}_${mes + 1}_${anio}.xlsx`);
+                    const ws = XLSX.utils.json_to_sheet(datos);
+                    const wb = XLSX.utils.book_new();
+                    XLSX.utils.book_append_sheet(wb, ws, "Datos");
+                    XLSX.writeFile(wb, `${nombreArchivo}_${fechaFiltro}.xlsx`);
                 }
-            } catch (error) {
-                console.error("Error en reporte:", error);
-                alert("Ocurrió un error al generar el reporte. Verifique la conexión o cuota de Firebase.");
+            } catch (e) {
+                console.error(e);
+                alert("Error al exportar.");
             } finally {
                 btn.disabled = false;
-                btn.innerText = originalText;
+                btn.innerText = "📥 Descargar Excel";
             }
         };
     </script>

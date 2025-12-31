@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cierre de Caja: Apuntes | Fotocop-Econo</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <style>
+        .cierre-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 25px;
+            margin-top: 20px;
+        }
+        
+        /* Tarjeta de Operador */
+        .operator-card {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 25px;
+            border-left: 5px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .operator-avatar {
+            width: 45px;
+            height: 45px;
+            background: var(--primary);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        #monto-diferencia {
+            font-size: 3rem;
+            font-weight: 800;
+            margin: 15px 0;
+            transition: color 0.3s;
+        }
+
+        @media (max-width: 900px) { .cierre-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <div class="sidebar" id="sidebar"></div>
+
+    <main class="main-content">
+        <div class="container">
+            <h2>💰 Cierre de Caja: Sector Apuntes</h2>
+            
+            <div class="operator-card">
+                <div class="operator-avatar" id="user-initial">?</div>
+                <div>
+                    <p style="font-size: 0.75rem; color: var(--gray); text-transform: uppercase; font-weight: bold; margin: 0;">Operador Responsable</p>
+                    <p id="operator-name" style="font-weight: bold; color: var(--dark); margin: 0;">Cargando...</p>
+                    <p id="operator-id" style="font-size: 0.8rem; color: var(--gray); margin: 0;"></p>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <span class="kpi-title">Efectivo Sistema</span>
+                    <p class="kpi-value" id="kpi-efectivo">$ 0.00</p>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">Transferencias</span>
+                    <p class="kpi-value" id="kpi-transferencia">$ 0.00</p>
+                </div>
+                <div class="kpi-card" style="border-top-color: var(--accent) !important;">
+                    <span class="kpi-title">Total Turno</span>
+                    <p class="kpi-value" id="kpi-total">$ 0.00</p>
+                </div>
+            </div>
+
+            <div class="cierre-grid">
+                <section class="card">
+                    <h3>Arqueo de caja</h3>
+                    <p style="font-size: 0.85rem; color: var(--gray); margin-bottom: 20px;">Declare el dinero en efectivo que entrega al finalizar el turno.</p>
+                    
+                    <form id="formCierre">
+                        <div class="form-group">
+                            <label>Efectivo en caja ($)</label>
+                            <input type="number" id="contado-efectivo" placeholder="0.00" step="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Novedades / Gastos / Tickets</label>
+                            <textarea id="observaciones" rows="3" placeholder="Ej: Se pagó limpieza $500, adjunto ticket..."></textarea>
+                        </div>
+                        <button type="submit" class="btn">Finalizar y Cerrar Caja</button>
+                    </form>
+                </section>
+
+                <section class="card" style="text-align: center; display: flex; flex-direction: column; justify-content: center;">
+                    <h3>Diferencia de Caja</h3>
+                    <div id="monto-diferencia" style="color: var(--gray);">$ 0.00</div>
+                    <p id="mensaje-diferencia" style="font-weight: bold; text-transform: uppercase; letter-spacing: 1px;"></p>
+                    <p style="font-size: 0.8rem; color: var(--gray); margin-top: 20px;">
+                        Se determinará el sobrante / faltante del dia
+                    </p>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <script type="module">
+        import { db, auth } from './firebase-config.js';
+        import { collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { cargarSidebar } from './sidebar.js';
+        import { verificarAcceso, sanitizar } from './security.js';
+
+        let totalEfectivoEsperado = 0;
+
+        // 1. Verificar Seguridad e Identidad
+        verificarAcceso(['superusuario', 'adm-eco', 'supervisor-apuntes', 'operario-apuntes']).then(info => {
+            cargarSidebar('cierre-apuntes'); // ID para marcar activo en sidebar
+            
+            // Llenar tarjeta de operador
+            document.getElementById('operator-name').innerText = info.nombreReal;
+            document.getElementById('operator-id').innerText = info.user.email;
+            document.getElementById('user-initial').innerText = info.nombreReal.charAt(0).toUpperCase();
+            
+            cargarVentasDelDia();
+        });
+
+        // 2. Cargar Ventas
+        async function cargarVentasDelDia() {
+            const hoy = new Date().toISOString().split('T')[0];
+            // Importante: que la colección coincida con la que usas en ventas_apuntes
+            const q = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Apuntes"));
+            
+            const querySnapshot = await getDocs(q);
+            let efectivo = 0;
+            let transferencia = 0;
+
+            querySnapshot.forEach((doc) => {
+                const venta = doc.data();
+                if (venta.metodoPago === 'efectivo') efectivo += venta.total;
+                else transferencia += venta.total;
+            });
+
+            totalEfectivoEsperado = efectivo;
+            document.getElementById('kpi-efectivo').innerText = `$ ${efectivo.toFixed(2)}`;
+            document.getElementById('kpi-transferencia').innerText = `$ ${transferencia.toFixed(2)}`;
+            document.getElementById('kpi-total').innerText = `$ ${(efectivo + transferencia).toFixed(2)}`;
+        }
+
+        // 3. Cálculo de Diferencia
+        document.getElementById('contado-efectivo').addEventListener('input', (e) => {
+            const contado = parseFloat(e.target.value) || 0;
+            const dif = contado - totalEfectivoEsperado;
+            const divMonto = document.getElementById('monto-diferencia');
+            const pMensaje = document.getElementById('mensaje-diferencia');
+
+            divMonto.innerText = `$ ${dif.toFixed(2)}`;
+
+            if (Math.abs(dif) < 0.01) {
+                divMonto.style.color = "var(--success)";
+                pMensaje.innerText = "✅ CAJA BALANCEADA";
+            } else if (dif > 0) {
+                divMonto.style.color = "var(--primary)";
+                pMensaje.innerText = "⚠️ SOBRANTE";
+            } else {
+                divMonto.style.color = "var(--danger)";
+                pMensaje.innerText = "❌ FALTANTE";
+            }
+        });
+
+        // 4. Guardar Cierre
+        document.getElementById('formCierre').onsubmit = async (e) => {
+            e.preventDefault();
+            const contado = parseFloat(document.getElementById('contado-efectivo').value);
+            
+            if(!confirm(`¿Confirmas el cierre con una diferencia de $ ${ (contado - totalEfectivoEsperado).toFixed(2) }?`)) return;
+
+            try {
+                await addDoc(collection(db, "cierres_diarios"), {
+                    fecha: serverTimestamp(),
+                    fechaString: new Date().toISOString().split('T')[0],
+                    sector: 'Apuntes',
+                    operador: auth.currentUser.email,
+                    nombreOperador: document.getElementById('operator-name').innerText,
+                    esperadoEfectivo: totalEfectivoEsperado,
+                    rendidoEfectivo: contado,
+                    diferencia: contado - totalEfectivoEsperado,
+                    observaciones: sanitizar(document.getElementById('observaciones').value),
+                    estado: 'Pendiente'
+                });
+
+                alert("✅ Cierre enviado correctamente.");
+                window.location.href = "inicio.html";
+            } catch (error) {
+                alert("Error al guardar el cierre.");
+                console.error(error);
+            }
+        };
+    </script>
+</body>
+</html>

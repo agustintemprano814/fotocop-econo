@@ -2,228 +2,250 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Editor de Registros | Fotocop-Econo</title>
-    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
+    <title>Fotocop-Econo | Editor Maestro</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-        .mode-switch {
-            display: flex;
-            justify-content: center;
-            background: #eee;
-            padding: 5px;
-            border-radius: 50px;
-            max-width: 600px;
-            margin: 20px auto;
-            gap: 5px;
-        }
-        .switch-btn {
-            flex: 1;
-            padding: 10px;
-            border: none;
-            border-radius: 40px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.3s;
-            background: transparent;
-            color: #666;
-            font-size: 0.8rem;
-        }
-        .switch-btn.active {
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 10px rgba(164, 21, 91, 0.3);
-        }
-        .record-card {
-            background: white;
+        .editor-container { max-width: 950px; margin: 0 auto; }
+        
+        .search-box {
+            background: #f8fafc;
+            padding: 20px;
             border-radius: 12px;
-            padding: 15px 20px;
-            margin-bottom: 12px;
+            border: 2px solid var(--primary);
+            margin-bottom: 20px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 15px;
+            align-items: end;
+        }
+
+        .results-list {
+            max-height: 250px;
+            overflow-y: auto;
+            background: white;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: none;
+        }
+        .result-item {
+            padding: 12px 15px;
+            border-bottom: 1px solid #f1f5f9;
+            cursor: pointer;
             display: flex;
             justify-content: space-between;
-            align-items: center;
-            border-left: 5px solid var(--secondary);
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            transition: 0.2s;
         }
-        .record-info { flex-grow: 1; }
-        .record-info h4 { margin: 0; font-size: 1rem; color: var(--dark); }
-        .record-info p { margin: 3px 0 0 0; font-size: 0.85rem; color: #777; }
-        
-        .badge { padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; margin-bottom: 5px; display: inline-block; }
-        .badge-venta { background: #e3f2fd; color: #1976d2; }
-        .badge-cierre { background: #f3e5f5; color: #7b1fa2; }
-        .badge-insumo { background: #e8f5e9; color: #2e7d32; }
+        .result-item:hover { background: #f0f9ff; }
 
-        .btn-action { padding: 10px; border-radius: 6px; border: none; cursor: pointer; margin-left: 10px; transition: 0.2s; }
-        .btn-del { background: #ffebee; color: var(--danger); }
-        .btn-del:hover { background: var(--danger); color: white; }
-        
-        .filter-container-centered {
-            display: flex;
-            justify-content: center;
-            gap: 10px;
-            margin-bottom: 20px;
-            background: #f9f9f9;
-            padding: 20px;
+        .edit-form-card {
+            display: none;
+            background: white;
+            padding: 25px;
             border-radius: 15px;
+            box-shadow: var(--shadow);
+            border-top: 5px solid var(--accent);
+            animation: slideUp 0.4s ease-out;
         }
+        
+        .field-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .field-row label { font-size: 0.7rem; font-weight: bold; color: var(--gray); text-transform: uppercase; }
+        .audit-tag { font-size: 0.7rem; color: #94a3b8; margin-top: 20px; font-style: italic; }
+        @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* Estilo para destacar el buscador por ID */
+        .id-input { border: 2px solid #cbd5e1 !important; background: #fffbeb !important; }
     </style>
 </head>
 <body>
     <div class="sidebar" id="sidebar"></div>
 
-    <div class="main-content">
-        <div class="container">
-            <h2 style="border-bottom: 2px solid var(--primary); padding-bottom: 10px;">🔍 Editor de Datos</h2>
+    <main class="main-content">
+        <div class="container editor-container">
+            <h2>✏️ Editor Maestro de Registros</h2>
+            <p style="margin-bottom: 20px; color: var(--gray);">Use el ID directo o aplique filtros para localizar el registro.</p>
 
-            <div class="mode-switch">
-                <button id="modeCierres" class="switch-btn active">📂 CIERRES</button>
-                <button id="modeVentas" class="switch-btn">🛒 VENTAS</button>
-                <button id="modeInsumos" class="switch-btn">📦 INSUMOS</button>
-            </div>
-            
-            <div class="filter-container-centered">
+            <div class="search-box">
                 <div class="form-group" style="margin:0">
-                    <input type="date" id="filtroFecha">
+                    <label>Colección:</label>
+                    <select id="selectColeccion">
+                        <option value="ventas">Ventas</option>
+                        <option value="cierres_diarios">Cierres de Caja</option>
+                        <option value="insumos">Insumos / Repuestos</option>
+                        <option value="stock">Stock Apuntes</option>
+                    </select>
                 </div>
-                <button id="btnBuscar" style="width:auto; padding: 0 25px; background: var(--dark); color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">BUSCAR REGISTROS</button>
+                <div class="form-group" style="margin:0">
+                    <label>ID Registro:</label>
+                    <input type="text" id="inputID" class="id-input" placeholder="Ingresar ID ..">
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label>Fecha Filtro:</label>
+                    <input type="date" id="filterFecha">
+                </div>
+                <div class="form-group" style="margin:0">
+                    <label>Operador:</label>
+                    <input type="text" id="filterEmail" placeholder="Email...">
+                </div>
+                <button class="btn btn-primary" onclick="ejecutarBusqueda()">🔍 Buscar</button>
             </div>
 
-            <div id="resultadosAuditoria" style="margin-top: 30px;">
-                <p id="status-msg" style="text-align: center; color: var(--gray);">Selecciona una categoría y fecha para auditar.</p>
+            <div id="resultsList" class="results-list"></div>
+
+            <div id="editCard" class="edit-form-card">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Edición de Datos</h3>
+                    <span id="badgeID" style="font-size:0.65rem; color:var(--primary); font-weight:bold; background:#e0f2fe; padding:4px 8px; border-radius:4px;"></span>
+                </div>
+                <hr style="margin: 15px 0; opacity: 0.1;">
+                
+                <form id="formDinamico">
+                    <div id="camposContenedor"></div>
+                    <div class="audit-tag" id="auditMsg"></div>
+                    <div style="display:flex; gap:10px; margin-top:20px">
+                        <button type="button" class="btn" style="background:var(--gray)" onclick="cancelarEdicion()">Cancelar</button>
+                        <button type="submit" class="btn btn-accent">💾 Aplicar Correcciones</button>
+                    </div>
+                </form>
             </div>
         </div>
-    </div>
+    </main>
 
     <script type="module">
         import { db, auth } from './firebase-config.js';
-        import { collection, query, where, getDocs, doc, deleteDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { verificarAcceso } from './security.js';
         import { cargarSidebar } from './sidebar.js';
-        import './auth-timeout.js';
 
-        // Mapeo de modos a nombres de colecciones reales en Firebase
-        const colecciones = {
-            'cierres': 'cierres',
-            'ventas': 'ventas',
-            'insumos': 'insumos'
-        };
+        let registroActual = null;
+        let infoUsuario = null;
 
-        let modoActual = 'cierres';
-        const resultadosDiv = document.getElementById('resultadosAuditoria');
+        document.getElementById('filterFecha').value = new Date().toISOString().split('T')[0];
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                try {
-                    await verificarAcceso(['supervisor', 'superusuario', 'administrador']);
-                    cargarSidebar('editor'); 
-                } catch (e) { console.error(e); }
-            } else {
-                window.location.href = "index.html";
-            }
+        verificarAcceso(['supervisor-fotocop', 'adm-eco', 'superusuario']).then(info => {
+            infoUsuario = info;
+            cargarSidebar('editor');
         });
 
-        // Configurar botones de modo
-        document.getElementById('modeCierres').onclick = (e) => cambiarModo('cierres', e.target);
-        document.getElementById('modeVentas').onclick = (e) => cambiarModo('ventas', e.target);
-        document.getElementById('modeInsumos').onclick = (e) => cambiarModo('insumos', e.target);
-
-        function cambiarModo(modo, btn) {
-            modoActual = modo;
-            document.querySelectorAll('.switch-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-            resultadosDiv.innerHTML = `<p style="text-align:center">Modo ${modo.toUpperCase()} activado. Presiona Buscar.</p>`;
-        }
-
-        document.getElementById('btnBuscar').onclick = async () => {
-            const fechaInput = document.getElementById('filtroFecha').value;
-            if(!fechaInput) return alert("Por favor selecciona una fecha.");
+        window.ejecutarBusqueda = async () => {
+            const col = document.getElementById('selectColeccion').value;
+            const idDirecto = document.getElementById('inputID').value.trim();
+            const resultsDiv = document.getElementById('resultsList');
             
-            resultadosDiv.innerHTML = "<p style='text-align:center'>🔍 Escaneando base de datos...</p>";
+            document.getElementById('editCard').style.display = 'none';
+            resultsDiv.innerHTML = "";
+            resultsDiv.style.display = 'none';
 
-            // Lógica híbrida para fechas (String y Timestamp)
-            try {
-                const q = query(collection(db, colecciones[modoActual]));
-                const snap = await getDocs(q);
-                
-                renderizarResultados(snap, fechaInput);
-            } catch (error) {
-                resultadosDiv.innerHTML = "❌ Error: " + error.message;
+            // CASO A: Búsqueda Directa por ID
+            if(idDirecto) {
+                try {
+                    const snap = await getDoc(doc(db, col, idDirecto));
+                    if(snap.exists()) {
+                        cargarParaEditar(snap.id, snap.data(), col);
+                    } else {
+                        alert("ID no encontrado en esta colección.");
+                    }
+                } catch (e) { alert("Error buscando ID directo."); }
+                return;
             }
+
+            // CASO B: Búsqueda por Filtros
+            const fecha = document.getElementById('filterFecha').value;
+            const email = document.getElementById('filterEmail').value.trim().toLowerCase();
+            
+            resultsDiv.innerHTML = "<p style='padding:15px'>🔍 Buscando en base de datos...</p>";
+            resultsDiv.style.display = 'block';
+
+            try {
+                let q = query(collection(db, col), where("fecha", "==", fecha));
+                const snap = await getDocs(q);
+                resultsDiv.innerHTML = "";
+
+                if(snap.empty) {
+                    resultsDiv.innerHTML = "<p style='padding:15px'>❌ Sin resultados para esta fecha.</p>";
+                    return;
+                }
+
+                snap.forEach(d => {
+                    const data = d.data();
+                    const matchEmail = !email || (data.operador && data.operador.includes(email)) || (data.supervisor && data.supervisor.includes(email)) || (data.nombreOperador && data.nombreOperador.toLowerCase().includes(email));
+                    
+                    if(matchEmail) {
+                        const item = document.createElement('div');
+                        item.className = 'result-item';
+                        let desc = data.total ? `Total: $${data.total}` : (data.rendidoEfectivo ? `Rendido: $${data.rendidoEfectivo}` : 'Ver Campos');
+                        let user = data.operador || data.supervisor || data.nombreOperador || 'Sistema';
+
+                        item.innerHTML = `<span><strong>${user}</strong> | ${desc}</span><span style="color:var(--primary)">Seleccionar ➔</span>`;
+                        item.onclick = () => cargarParaEditar(d.id, data, col);
+                        resultsDiv.appendChild(item);
+                    }
+                });
+
+                if(!resultsDiv.hasChildNodes()) resultsDiv.innerHTML = "<p style='padding:15px'>❌ No se encontró el operador buscado.</p>";
+
+            } catch (e) { alert("Error en filtros."); }
         };
 
-        function renderizarResultados(snapshot, fechaFiltro) {
-            resultadosDiv.innerHTML = "";
-            let encontrados = 0;
+        function cargarParaEditar(id, data, col) {
+            // Seguridad por Sector
+            if(infoUsuario.rol === 'supervisor-fotocop' && data.sector === 'Apuntes') {
+                return alert("⛔ Acceso Denegado: Su rol solo permite editar Fotocopiadora.");
+            }
 
-            snapshot.forEach(documento => {
-                const data = documento.data();
-                const id = documento.id;
-                
-                // Normalización de fecha para comparar
-                let fechaDoc = "";
-                if (data.fecha && typeof data.fecha.toDate === 'function') {
-                    fechaDoc = data.fecha.toDate().toISOString().split('T')[0];
-                } else if (typeof data.fecha === 'string') {
-                    fechaDoc = data.fecha.split('T')[0];
+            registroActual = { id, col, data };
+            const container = document.getElementById('camposContenedor');
+            container.innerHTML = "";
+            
+            document.getElementById('badgeID').innerText = `DOCUMENT_ID: ${id}`;
+            document.getElementById('editCard').style.display = 'block';
+            document.getElementById('resultsList').style.display = 'none';
+
+            const modInfo = data.ultimaModificacionPor ? `Editado por: ${data.ultimaModificacionPor}` : "Registro original.";
+            document.getElementById('auditMsg').innerText = `ℹ️ ${modInfo} - Al guardar se registrará tu firma digital.`;
+
+            // Iterar campos excluyendo objetos y metadatos
+            for(let key in data) {
+                if(typeof data[key] !== 'object' && !['fecha','timestamp','fechaString','ultimaModificacionPor','fechaModificacion'].includes(key)) {
+                    container.innerHTML += `
+                        <div class="field-row">
+                            <label>${key.replace(/([A-Z])/g, ' $1')}</label>
+                            <input type="text" name="${key}" value="${data[key]}" class="m-input">
+                        </div>
+                    `;
                 }
+            }
+        }
 
-                if (fechaDoc === fechaFiltro) {
-                    encontrados++;
-                    let htmlCard = "";
+        document.getElementById('formDinamico').onsubmit = async (e) => {
+            e.preventDefault();
+            if(!confirm("¿Confirmar edición? Se sobrescribirán los datos originales.")) return;
 
-                    if (modoActual === 'cierres') {
-                        htmlCard = `
-                            <div class="record-card" style="border-left-color: #7b1fa2">
-                                <div class="record-info">
-                                    <span class="badge badge-cierre">CIERRE</span>
-                                    <h4>Supervisor: ${data.supervisor || 'No indicado'}</h4>
-                                    <p>Total: $${data.caja?.total_neto || 0} | Usuario: ${data.usuario || 'N/A'}</p>
-                                </div>
-                                <button class="btn-action btn-del" onclick="window.borrarRegistro('cierres', '${id}')">🗑️ Borrar</button>
-                            </div>`;
-                    } else if (modoActual === 'ventas') {
-                        htmlCard = `
-                            <div class="record-card" style="border-left-color: #1976d2">
-                                <div class="record-info">
-                                    <span class="badge badge-venta">VENTA</span>
-                                    <h4>Monto: $${data.monto}</h4>
-                                    <p>Metodo: ${data.metodo || 'Efectivo'} | Operario: ${data.operario || 'N/A'}</p>
-                                </div>
-                                <button class="btn-action btn-del" onclick="window.borrarRegistro('ventas', '${id}')">🗑️ Borrar</button>
-                            </div>`;
-                    } else if (modoActual === 'insumos') {
-                        // AQUÍ PODRÁS VER EL "CÓDIGO" SI ESTÁ EN NOTAS O DETALLE
-                        htmlCard = `
-                            <div class="record-card" style="border-left-color: #2e7d32">
-                                <div class="record-info">
-                                    <span class="badge badge-insumo">INSUMO / MTTO</span>
-                                    <h4>${data.categoria?.toUpperCase() || 'INSUMO'}: ${data.maquina || ''}</h4>
-                                    <p>Costo: $${data.costo} | <strong>Detalle:</strong> ${data.notas || data.detalle || 'Sin notas'}</p>
-                                    <small style="color:red">ID: ${id}</small>
-                                </div>
-                                <button class="btn-action btn-del" onclick="window.borrarRegistro('insumos', '${id}')">🗑️ ELIMINAR</button>
-                            </div>`;
-                    }
-                    resultadosDiv.innerHTML += htmlCard;
-                }
+            const formData = new FormData(e.target);
+            const updates = {};
+            formData.forEach((value, key) => {
+                updates[key] = (isNaN(value) || value === "") ? value : Number(value);
             });
 
-            if(encontrados === 0) {
-                resultadosDiv.innerHTML = `<p style="text-align:center">No hay registros de ${modoActual} para el día ${fechaFiltro}.</p>`;
-            }
-        }
+            updates.ultimaModificacionPor = auth.currentUser.email;
+            updates.fechaModificacion = new Date().toISOString();
 
-        window.borrarRegistro = async (coleccion, id) => {
-            if(!confirm(`⚠️ ¿ELIMINAR REGISTRO?\nEsta acción limpiará el dato corrupto de la base de datos.`)) return;
             try {
-                await deleteDoc(doc(db, coleccion, id));
-                alert("✅ Registro eliminado exitosamente.");
-                document.getElementById('btnBuscar').click();
-            } catch (error) {
-                alert("❌ Error: No tienes permisos para borrar o la cuota se excedió.");
-            }
+                await updateDoc(doc(db, registroActual.col, registroActual.id), updates);
+                alert("✨ Registro corregido satisfactoriamente.");
+                location.reload();
+            } catch (e) { alert("Error de escritura."); }
         };
+
+        window.cancelarEdicion = () => { location.reload(); };
     </script>
 </body>
 </html>

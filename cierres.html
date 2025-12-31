@@ -7,267 +7,271 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-        :root {
-            --bg-caja: #f0fff4;
-            --bg-hojas: #fff5f5;
+        :root { --bg-caja: #f0fff4; --bg-hojas: #fff5f5; }
+
+        .operator-card {
+            background: #f8f9fa; border-radius: 12px; padding: 15px;
+            margin-bottom: 25px; border-left: 5px solid var(--accent);
+            display: flex; align-items: center; gap: 15px;
+        }
+        .operator-avatar {
+            width: 45px; height: 45px; background: var(--primary);
+            color: white; border-radius: 50%; display: flex;
+            justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem;
         }
 
-        .header-reporte {
-            display: flex;
-            justify-content: space-between;
-            align-items: center; 
-            border-bottom: 2px solid #f1f5f9;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
-        }
-
-        .titulo-grupo h2 {
-            margin: 0;
-            font-size: 1.6rem; 
-            color: var(--secondary);
-            border: none;
-            padding: 0;
-        }
-
-        .titulo-grupo p {
-            margin: 4px 0 0 0;
-            font-size: 0.9rem;
-            color: var(--primary);
-            font-weight: bold;
-        }
-        .btn-imprimir-mini {
-            background: white !important; 
-            color: #475569 !important;
-            border: 1px solid #cbd5e1 !important;
-            padding: 6px 12px !important; 
-            border-radius: 6px !important;
-            font-size: 0.8rem !important;
-            font-weight: 600 !important;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            width: auto !important;
-            height: fit-content;
-            transition: all 0.2s ease;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
-        }
-
-        .btn-imprimir-mini:hover {
-            background: #f8fafc !important;
-            border-color: var(--primary) !important;
-            color: var(--primary) !important;
-        }
-
+        /* Acordeón de Secciones */
         .section-header-cierre {
-            background: var(--primary);
-            color: white;
-            padding: 12px 20px;
-            border-radius: 8px;
-            margin: 30px 0 20px 0;
-            font-size: 1.1rem;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            gap: 10px;
+            background: var(--primary); color: white; padding: 12px 20px;
+            border-radius: 8px; margin: 15px 0 5px 0; font-weight: bold;
+            font-size: 1rem; display: flex; align-items: center; justify-content: space-between;
+            cursor: pointer; transition: 0.3s;
         }
+        .section-content {
+            max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out;
+            padding: 0 5px;
+        }
+        .section-content.active { max-height: 2000px; padding: 15px 5px; }
 
         .grid-maquinas {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 15px;
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
         }
 
         .maquina-card {
-            background: white;
-            border: 1px solid #e2e8f0;
-            border-radius: 10px;
-            padding: 15px;
+            background: white; border: 1px solid #e2e8f0;
+            border-radius: 10px; padding: 10px; position: relative;
         }
-
-        .maquina-card h4 {
-            margin: 0 0 10px 0;
-            color: var(--secondary);
-            font-size: 0.85rem;
-            text-transform: uppercase;
-        }
-
-        .input-group-cierre {
-            display: flex;
-            flex-direction: column;
-            gap: 5px;
-        }
-
-        .input-group-cierre label {
-            font-size: 0.7rem;
-            font-weight: 700;
-            color: #64748b;
-        }
-
-        input[type="number"] {
-            padding: 8px;
-            border: 1px solid #cbd5e1;
-            border-radius: 6px;
-            font-size: 0.95rem;
-            width: 100%;
-            box-sizing: border-box;
+        .maquina-card h4 { margin: 0 0 5px 0; color: var(--secondary); font-size: 0.7rem; text-transform: uppercase; }
+        
+        .neto-badge {
+            background: var(--primary); color: white;
+            font-size: 0.6rem; font-weight: 800; padding: 1px 5px; border-radius: 4px;
+            display: inline-block; margin-top: 5px;
         }
 
         .total-box-resaltado {
-            margin-top: 20px;
-            padding: 15px 20px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            font-weight: 800;
-            font-size: 1.1rem;
+            margin-top: 15px; padding: 15px 20px; border-radius: 10px;
+            display: flex; justify-content: space-between; align-items: center;
+            font-weight: 800; font-size: 1.1rem;
         }
-
         .total-caja { background: var(--bg-caja); border: 1px solid #c6f6d5; color: #276749; }
         .total-hojas { background: var(--bg-hojas); border: 1px solid #fed7d7; color: #9b2c2c; }
 
-        .btn-save-cierre {
-            width: 100%;
-            padding: 16px;
-            background: var(--secondary);
-            color: white;
-            border: none;
-            border-radius: 8px;
-            font-size: 1rem;
-            font-weight: 700;
-            cursor: pointer;
-            margin-top: 30px;
+        .pin-overlay {
+            position: fixed; top:0; left:0; width:100%; height:100%;
+            background: rgba(0,0,0,0.8); display:none; justify-content:center;
+            align-items:center; z-index:2000; backdrop-filter: blur(5px);
         }
 
-        @media print {
-            .sidebar, .btn-imprimir-mini, .btn-save-cierre, .header-info { display: none !important; }
-            .main-content { margin: 0; padding: 0; }
-            .container { box-shadow: none; max-width: 100%; }
+        .btn-next {
+            background: var(--dark); color: white; border: none; padding: 10px 20px;
+            border-radius: 6px; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold;
         }
+
+        @media print { .sidebar, .btn-save-cierre, .btn-imprimir-mini, .operator-card, .btn-next { display: none !important; } }
     </style>
 </head>
 <body>
-
     <div class="sidebar" id="sidebar"></div>
 
-    <div class="main-content">
-        <div class="header-info" style="text-align: right; padding: 10px; color: #94a3b8; font-size: 0.8rem;">
-            👤 <span id="displayUser">Cargando...</span>
-        </div>
-
+    <main class="main-content">
         <div class="container">
-            <div class="header-reporte">
-                <div class="titulo-grupo">
-                    <h2>Cierre de Jornada</h2>
-                    <p id="fechaActual"></p>
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+                <div>
+                    <h2 style="border:none; margin:0;">Cierre de Jornada</h2>
+                    <p id="fechaActual" style="color:var(--primary); font-weight:bold; font-size:0.9rem;"></p>
                 </div>
-                <button type="button" class="btn-imprimir-mini" onclick="window.print()">
-                    🖨️ Imprimir
-                </button>
+                <button type="button" class="btn-imprimir-mini" onclick="window.print()">🖨️ Imprimir</button>
+            </div>
+
+            <div class="operator-card">
+                <div class="operator-avatar" id="user-initial">?</div>
+                <div>
+                    <p style="font-size: 0.7rem; color: var(--gray); text-transform: uppercase; font-weight: bold; margin: 0;">Supervisor Responsable</p>
+                    <p id="displayUser" style="font-weight: bold; color: var(--dark); margin: 0;">Cargando...</p>
+                </div>
+            </div>
+
+            <div class="kpi-grid">
+                <div class="kpi-card">
+                    <span class="kpi-title">Hojas del Día (Neto/2)</span>
+                    <p class="kpi-value" id="kpi-hojas-total">0</p>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">Efectivo (Sistema)</span>
+                    <p class="kpi-value" id="kpi-sistema-efectivo">$ 0.00</p>
+                </div>
+                <div class="kpi-card">
+                    <span class="kpi-title">Transf. (Sistema)</span>
+                    <p class="kpi-value" id="kpi-sistema-transf">$ 0.00</p>
+                </div>
+                <div class="kpi-card" style="border-top-color: var(--accent) !important;">
+                    <span class="kpi-title">Diferencia Final</span>
+                    <p class="kpi-value" id="kpi-conciliacion-final">$ 0.00</p>
+                </div>
             </div>
 
             <form id="formCierreCompleto">
-                <div class="section-header-cierre">🔢 Contadores de Máquinas</div>
-                <div class="grid-maquinas" id="contenedorMaquinas"></div>
-
-                <div class="section-header-cierre">💰 Ingresos y Gastos de Caja</div>
-                <div class="grid-maquinas">
-                    <div class="maquina-card">
-                        <h4 style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">💵 Caja</h4>
-                        <div class="input-group-cierre">
-                            <label>Efectivo ($):</label>
-                            <input type="number" id="ingEfectivo" class="calc" value="0">
-                        </div>
-                        <div class="input-group-cierre" style="margin-top:12px">
-                            <label>Transferencias ($):</label>
-                            <input type="number" id="ingTransf" class="calc" value="0">
-                        </div>
-                        <div class="input-group-cierre" style="margin-top:12px">
-                            <label>Gastos ($):</label>
-                            <input type="number" id="gastosDia" class="calc" value="0">
-                        </div>
-                    </div>
-                    
-                    <div class="maquina-card" style="border-left: 4px solid var(--primary);">
-                        <h4 style="border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">📦 Ventas Directas</h4>
-                        <div class="input-group-cierre">
-                            <label>Stock Librería ($):</label>
-                            <input type="number" id="vtaStock" class="calc" value="0">
-                        </div>
-                        <div class="input-group-cierre" style="margin-top:12px">
-                            <label>Copia Rápida ($):</label>
-                            <input type="number" id="vtaRapida" class="calc" value="0">
-                        </div>
-                        <div style="margin-top: 20px; padding: 8px; background: #fffaf0; border-radius: 6px; border: 1px solid #feebc8; text-align: center;">
-                            <small style="color: #9c4221; font-weight: 700; font-size: 0.7rem;">SUBTOTAL:</small>
-                            <div id="subtotalVentasDirectas" style="font-size: 1.1rem; font-weight: 800; color: #9c4221;">$ 0</div>
-                        </div>
-                    </div>
+                <div class="section-header-cierre" onclick="toggleSeccion('sec-contadores')">
+                    <span>🔢 1. Contadores de Máquinas</span>
+                    <span id="icon-sec-contadores">🔽</span>
+                </div>
+                <div id="sec-contadores" class="section-content active">
+                    <div class="grid-maquinas" id="contenedorMaquinas"></div>
+                    <button type="button" class="btn-next" onclick="irASeccion('sec-caja')">Siguiente: Ingresos y Gastos ➔</button>
                 </div>
 
-                <div class="total-box-resaltado total-caja">
-                    <span>Total en Caja :</span>
-                    <span id="totalCajaNeto">$ 0</span>
+                <div class="section-header-cierre" onclick="toggleSeccion('sec-caja')">
+                    <span>💰 2. Ingresos y Gastos de Caja</span>
+                    <span id="icon-sec-caja">🔽</span>
                 </div>
-
-                <div class="section-header-cierre">📄 Copias No Cobrada</div>
-                <div class="grid-maquinas">
-                    <div class="maquina-card">
-                        <label style="font-size: 0.7rem; font-weight: 700;">C.E.C.E</label>
-                        <input type="number" class="nc" id="cece" value="0">
-                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Apuntes</label>
-                        <input type="number" class="nc" id="stockNC" value="0">
-                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Becas</label>
-                        <input type="number" class="nc" id="beca" value="0">
+                <div id="sec-caja" class="section-content">
+                    <div class="grid-maquinas">
+                        <div class="maquina-card">
+                            <h4>💵 Caja Física</h4>
+                            <div class="form-group"><label>Efectivo ($):</label><input type="number" id="ingEfectivo" class="calc" value="0"></div>
+                            <div class="form-group"><label>Transferencias ($):</label><input type="number" id="ingTransf" class="calc" value="0"></div>
+                            <div class="form-group"><label>Gastos ($):</label><input type="number" id="gastosDia" class="calc" value="0"></div>
+                        </div>
+                        <div class="maquina-card" style="border-left: 4px solid var(--primary);">
+                            <h4>📦 Ventas Directas</h4>
+                            <div class="form-group"><label>Stock Librería ($):</label><input type="number" id="vtaStock" class="calc" value="0"></div>
+                            <div class="form-group"><label>Copia Rápida ($):</label><input type="number" id="vtaRapida" class="calc" value="0"></div>
+                            <div style="margin-top: 10px; padding: 8px; background: #fffaf0; border-radius: 6px; text-align: center;">
+                                <small style="color: #9c4221; font-weight: 700; font-size: 0.6rem;">SUBTOTAL:</small>
+                                <div id="subtotalVentasDirectas" style="font-size: 1rem; font-weight: 800; color: #9c4221;">$ 0</div>
+                            </div>
+                        </div>
                     </div>
-                    <div class="maquina-card">
-                        <label style="font-size: 0.7rem; font-weight: 700;">Internas</label>
-                        <input type="number" class="nc" id="internas" value="0">
-                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Originales</label>
-                        <input type="number" class="nc" id="originales" value="0">
-                        <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Descartes</label>
-                        <input type="number" class="nc" id="descartes" value="0">
+                    <div class="total-box-resaltado total-caja">
+                        <span>Total Rendido:</span>
+                        <span id="totalCajaNeto">$ 0</span>
                     </div>
+                    <button type="button" class="btn-next" onclick="irASeccion('sec-nc')">Siguiente: No Cobradas ➔</button>
                 </div>
 
-                <div class="total-box-resaltado total-hojas">
-                    <span>Total No Cobradas:</span>
-                    <span id="totalNC">0</span>
+                <div class="section-header-cierre" onclick="toggleSeccion('sec-nc')">
+                    <span>📄 3. Copias No Cobradas</span>
+                    <span id="icon-sec-nc">🔽</span>
                 </div>
-
-                <button type="submit" class="btn-save-cierre">💾 GUARDAR CIERRE</button>
+                <div id="sec-nc" class="section-content">
+                    <div class="grid-maquinas">
+                        <div class="maquina-card">
+                            <label style="font-size: 0.7rem; font-weight: 700;">C.E.C.E</label>
+                            <input type="number" class="nc" id="cece" value="0">
+                            <label style="font-size: 0.7rem; font-weight: 700; margin-top:10px; display:block;">Apuntes</label>
+                            <input type="number" class="nc" id="stockNC" value="0">
+                        </div>
+                        <div class="maquina-card">
+                            <label style="font-size: 0.7rem; font-weight: 700;">Internas / Becas</label>
+                            <input type="number" class="nc" id="internas" value="0">
+                            <input type="number" class="nc" id="beca" value="0" style="margin-top:10px">
+                        </div>
+                        <div class="maquina-card">
+                            <label style="font-size: 0.7rem; font-weight: 700;">Originales / Descarte</label>
+                            <input type="number" class="nc" id="originales" value="0">
+                            <input type="number" class="nc" id="descartes" value="0" style="margin-top:10px">
+                        </div>
+                    </div>
+                    <div class="total-box-resaltado total-hojas">
+                        <span>Total No Cobradas (Hojas):</span>
+                        <span id="totalNC">0</span>
+                    </div>
+                    <button type="submit" class="btn-save-cierre" style="background:var(--success); margin-top:20px;">💾 FINALIZAR Y GUARDAR TODO</button>
+                </div>
             </form>
+        </div>
+    </main>
+
+    <div id="pinOverlay" class="pin-overlay">
+        <div class="card" style="width:320px; text-align:center;">
+            <h3>Firma de Supervisor</h3>
+            <p style="font-size:0.8rem; color:var(--gray)">PIN para validar el cierre.</p>
+            <input type="password" id="pinInput" maxlength="4" style="text-align:center; font-size:2rem; letter-spacing:10px; margin:20px 0; width:80%">
+            <div style="display:flex; gap:10px">
+                <button type="button" class="btn" style="background:var(--gray)" onclick="cerrarPin()">Cancelar</button>
+                <button type="button" class="btn" onclick="confirmarCierreFinal()">Confirmar</button>
+            </div>
         </div>
     </div>
 
     <script type="module">
         import { auth, db } from './firebase-config.js';
-        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { verificarAcceso } from './security.js';
         import { cargarSidebar } from './sidebar.js';
-        import './auth-timeout.js';
 
-        verificarAcceso(['supervisor','superusuario']).then(() => {
-            cargarSidebar('cierre');
+        let sistemaEfectivo = 0;
+        let sistemaTransf = 0;
+
+        // 1. CARGA INICIAL Y SEGURIDAD
+        verificarAcceso(['supervisor-fotocop', 'superusuario', 'adm-eco']).then(info => {
+            cargarSidebar('cierre-foto');
+            document.getElementById('displayUser').innerText = info.nombreReal;
+            document.getElementById('user-initial').innerText = info.nombreReal.charAt(0).toUpperCase();
+            generarContadores();
+            cargarVentasSistema();
         });
 
-        document.getElementById('fechaActual').innerText = new Date().toLocaleDateString('es-ES', { weekday:'long', day:'numeric', month:'long', year:'numeric'});
+        document.getElementById('fechaActual').innerText = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long', year:'numeric'});
 
-        const cont = document.getElementById('contenedorMaquinas');
-        for(let i=1; i<=7; i++) {
-            cont.innerHTML += `
-            <div class="maquina-card">
-                <h4>Máquina ${i}</h4>
-                <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px">
-                    <div class="input-group-cierre"><label>Inicio</label><input type="number" id="m${i}_i" value="0"></div>
-                    <div class="input-group-cierre"><label>Cierre</label><input type="number" id="m${i}_c" value="0"></div>
-                </div>
-            </div>`;
+        function generarContadores() {
+            const cont = document.getElementById('contenedorMaquinas');
+            for(let i=1; i<=7; i++) {
+                cont.innerHTML += `
+                <div class="maquina-card">
+                    <h4>Máquina ${i}</h4>
+                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px">
+                        <div class="input-group-cierre"><label style="font-size:0.6rem">Inicio</label><input type="number" class="m-input" id="m${i}_i" value=""></div>
+                        <div class="input-group-cierre"><label style="font-size:0.6rem">Cierre</label><input type="number" class="m-input" id="m${i}_c" value=""></div>
+                    </div>
+                    <div id="neto_m${i}" class="neto-badge">Neto: 0</div>
+                </div>`;
+            }
         }
 
+        // 2. LÓGICA DE NAVEGACIÓN ACORDEÓN
+        window.toggleSeccion = (id) => {
+            const el = document.getElementById(id);
+            const isActive = el.classList.contains('active');
+            // document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+            if(!isActive) el.classList.add('active');
+            else el.classList.remove('active');
+        };
+
+        window.irASeccion = (proximaId) => {
+            document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
+            document.getElementById(proximaId).classList.add('active');
+            window.scrollTo({ top: document.getElementById(proximaId).offsetTop - 100, behavior: 'smooth' });
+        };
+
+        // 3. CARGA DE VENTAS DEL SISTEMA (ventas.html)
+        async function cargarVentasSistema() {
+            const hoy = new Date().toISOString().split('T')[0];
+            const q = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Fotocopiadora"));
+            const snap = await getDocs(q);
+            sistemaEfectivo = 0; sistemaTransf = 0;
+            snap.forEach(d => {
+                if(d.data().metodoPago === 'efectivo') sistemaEfectivo += d.data().total;
+                else sistemaTransf += d.data().total;
+            });
+            document.getElementById('kpi-sistema-efectivo').innerText = `$ ${sistemaEfectivo.toFixed(2)}`;
+            document.getElementById('kpi-sistema-transf').innerText = `$ ${sistemaTransf.toFixed(2)}`;
+        }
+
+        // 4. CÁLCULOS EN TIEMPO REAL
         document.addEventListener('input', () => {
+            let totalNetoMaquinas = 0;
+            for(let i=1; i<=7; i++){
+                const ini = Number(document.getElementById(`m${i}_i`).value);
+                const fin = Number(document.getElementById(`m${i}_c`).value);
+                const neto = (fin > 0 && fin >= ini) ? (fin - ini) : 0;
+                document.getElementById(`neto_m${i}`).innerText = `Neto: ${neto}`;
+                totalNetoMaquinas += neto;
+            }
+            document.getElementById('kpi-hojas-total').innerText = Math.floor(totalNetoMaquinas / 2);
+
             const e = Number(document.getElementById('ingEfectivo').value);
             const t = Number(document.getElementById('ingTransf').value);
             const g = Number(document.getElementById('gastosDia').value);
@@ -275,62 +279,60 @@
             const r = Number(document.getElementById('vtaRapida').value);
             
             document.getElementById('subtotalVentasDirectas').innerText = `$ ${s + r}`;
-            document.getElementById('totalCajaNeto').innerText = `$ ${e + t - g}`;
+            document.getElementById('totalCajaNeto').innerText = `$ ${(e + t - g).toFixed(2)}`;
+
+            const diferencia = (e + t) - (sistemaEfectivo + sistemaTransf + s + r);
+            const kpiConciliacion = document.getElementById('kpi-conciliacion-final');
+            kpiConciliacion.innerText = `$ ${diferencia.toFixed(2)}`;
+            kpiConciliacion.style.color = Math.abs(diferencia) < 1 ? "var(--success)" : (diferencia > 0 ? "var(--primary)" : "var(--danger)");
 
             let tNC = 0;
             document.querySelectorAll('.nc').forEach(i => tNC += Number(i.value));
             document.getElementById('totalNC').innerText = tNC;
         });
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) document.getElementById('displayUser').innerText = user.email;
-        });
+        // 5. GUARDADO CON PIN
+        const overlay = document.getElementById('pinOverlay');
+        document.getElementById('formCierreCompleto').onsubmit = (e) => { e.preventDefault(); overlay.style.display = 'flex'; };
+        window.cerrarPin = () => { overlay.style.display = 'none'; };
 
-        document.getElementById('formCierreCompleto').onsubmit = async (e) => {
-            e.preventDefault();
-            const btn = e.target.querySelector('button[type="submit"]');
-            btn.disabled = true;
-            btn.innerText = "⏳ Guardando...";
+        window.confirmarCierreFinal = async () => {
+            const pin = document.getElementById('pinInput').value;
+            if(pin !== "1234") { alert("PIN Incorrecto"); return; }
+            
+            overlay.style.display = 'none';
+            const btn = document.querySelector('.btn-save-cierre');
+            btn.disabled = true; btn.innerText = "⏳ Procesando...";
 
             try {
                 const maquinas = {};
                 for(let i=1; i<=7; i++) {
                     maquinas[`m${i}`] = { 
                         inicio: Number(document.getElementById(`m${i}_i`).value), 
-                        cierre: Number(document.getElementById(`m${i}_c`).value) 
+                        cierre: Number(document.getElementById(`m${i}_c`).value),
+                        neto: Number(document.getElementById(`m${i}_c`).value) - Number(document.getElementById(`m${i}_i`).value)
                     };
                 }
 
-                await addDoc(collection(db, "cierres"), {
+                await addDoc(collection(db, "cierres_diarios"), {
+                    sector: 'Fotocopiadora',
                     supervisor: auth.currentUser.email,
+                    nombreSupervisor: document.getElementById('displayUser').innerText,
                     fecha: serverTimestamp(),
                     maquinas,
                     caja: { 
-                        efectivo: Number(document.getElementById('ingEfectivo').value), 
-                        transferencia: Number(document.getElementById('ingTransf').value), 
+                        efectivoRendido: Number(document.getElementById('ingEfectivo').value), 
+                        transferenciaRendida: Number(document.getElementById('ingTransf').value), 
                         gastos: Number(document.getElementById('gastosDia').value),
-                        venta_stock: Number(document.getElementById('vtaStock').value),
-                        copia_rapida: Number(document.getElementById('vtaRapida').value),
-                        total_neto: Number(document.getElementById('totalCajaNeto').innerText.replace('$ ', ''))
+                        diferencia: Number(document.getElementById('kpi-conciliacion-final').innerText.replace('$ ',''))
                     },
-                    no_cobradas: {
-                        cece: Number(document.getElementById('cece').value),
-                        stock: Number(document.getElementById('stockNC').value),
-                        beca: Number(document.getElementById('beca').value),
-                        internas: Number(document.getElementById('internas').value),
-                        originales: Number(document.getElementById('originales').value),
-                        descartes: Number(document.getElementById('descartes').value),
-                        total: Number(document.getElementById('totalNC').innerText)
-                    }
+                    totalNoCobradas: Number(document.getElementById('totalNC').innerText),
+                    estado: 'Finalizado'
                 });
 
-                alert("✅ Cierre guardado.");
-                location.reload();
-            } catch (err) { 
-                alert("❌ Error: " + err.message); 
-                btn.disabled = false;
-                btn.innerText = "💾 GUARDAR CIERRE";
-            }
+                alert("✅ Cierre guardado con éxito.");
+                window.location.href = "inicio.html";
+            } catch (err) { alert("Error: " + err.message); btn.disabled = false; }
         };
     </script>
 </body>
