@@ -20,7 +20,7 @@
             justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem;
         }
 
-        /* Acordeón de Secciones */
+
         .section-header-cierre {
             background: var(--primary); color: white; padding: 12px 20px;
             border-radius: 8px; margin: 15px 0 5px 0; font-weight: bold;
@@ -205,7 +205,7 @@
         let sistemaEfectivo = 0;
         let sistemaTransf = 0;
 
-        // 1. CARGA INICIAL Y SEGURIDAD
+
         verificarAcceso(['supervisor-fotocop', 'superusuario', 'adm-eco']).then(info => {
             cargarSidebar('cierre-foto');
             document.getElementById('displayUser').innerText = info.nombreReal;
@@ -231,7 +231,6 @@
             }
         }
 
-        // 2. LÓGICA DE NAVEGACIÓN ACORDEÓN
         window.toggleSeccion = (id) => {
             const el = document.getElementById(id);
             const isActive = el.classList.contains('active');
@@ -246,7 +245,7 @@
             window.scrollTo({ top: document.getElementById(proximaId).offsetTop - 100, behavior: 'smooth' });
         };
 
-        // 3. CARGA DE VENTAS DEL SISTEMA (ventas.html)
+  
         async function cargarVentasSistema() {
             const hoy = new Date().toISOString().split('T')[0];
             const q = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Fotocopiadora"));
@@ -260,7 +259,7 @@
             document.getElementById('kpi-sistema-transf').innerText = `$ ${sistemaTransf.toFixed(2)}`;
         }
 
-        // 4. CÁLCULOS EN TIEMPO REAL
+
         document.addEventListener('input', () => {
             let totalNetoMaquinas = 0;
             for(let i=1; i<=7; i++){
@@ -291,7 +290,7 @@
             document.getElementById('totalNC').innerText = tNC;
         });
 
-        // 5. GUARDADO CON PIN
+
         const overlay = document.getElementById('pinOverlay');
         document.getElementById('formCierreCompleto').onsubmit = (e) => { e.preventDefault(); overlay.style.display = 'flex'; };
         window.cerrarPin = () => { overlay.style.display = 'none'; };

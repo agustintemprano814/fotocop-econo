@@ -12,7 +12,7 @@ const esLocal = host === "localhost" || host === "127.0.0.1" || host === "";
 const esPaginaLogin = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.includes('index');
 const esPaginaMantenimiento = window.location.href.includes('mantenimiento.html');
 
-// --- MATRIZ DE PERMISOS OFICIAL ---
+
 const PERMISOS_PAGINAS = {
     'apuntes.html': ['operario-apuntes', 'supervisor-apuntes', 'superusuario'],
     'ventas.html': ['operario-fotocop', 'supervisor-fotocop', 'superusuario'],
@@ -30,7 +30,7 @@ const PERMISOS_PAGINAS = {
     'importador.html': ['superusuario']
 };
 
-// Ocultar contenido por defecto para evitar parpadeo de datos privados
+
 if (!esPaginaLogin && !esPaginaMantenimiento) {
     document.documentElement.style.display = 'none';
 }
@@ -76,14 +76,14 @@ export async function verificarAcceso(rolesManuales = null) {
                 const esSuper = rol === 'superusuario';
                 const nombreReal = userData.nombreReal || user.email.split('@')[0];
 
-                // 1. Vigilante de mantenimiento
+
                 activarVigilanteMantenimiento(esSuper);
 
-                // 2. Validación de Acceso por Matriz
+
                 const pathParts = window.location.pathname.split('/');
                 const paginaActual = pathParts[pathParts.length - 1];
                 
-                // Si la página está en nuestra matriz, verificamos permiso
+
                 if (PERMISOS_PAGINAS[paginaActual]) {
                     const rolesPermitidos = PERMISOS_PAGINAS[paginaActual];
                     if (!rolesPermitidos.includes(rol) && !esSuper) {
@@ -93,14 +93,14 @@ export async function verificarAcceso(rolesManuales = null) {
                     }
                 }
 
-                // 3. Validación manual (si se llama desde la página con roles específicos)
+
                 if (rolesManuales && !rolesManuales.includes(rol) && !esSuper) {
                     alert("⛔ No autorizado para esta acción.");
                     window.location.href = "inicio.html";
                     return;
                 }
 
-                // Mostrar sitio si todo está OK
+ 
                 document.documentElement.style.display = 'block';
                 document.body.style.display = 'block';
 

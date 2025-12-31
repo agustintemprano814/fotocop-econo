@@ -139,8 +139,7 @@
                     const fechaStr = formatFecha(fila[0]);
                     const batch = writeBatch(db);
 
-                    // 1. Mapeo de Contadores (Col 1 a 14)
-                    // M1_Ini=1, M1_Cie=2 | M2_Ini=3, M2_Cie=4...
+
                     for (let i = 1; i <= 7; i++) {
                         const colIni = (i * 2) - 1;
                         const colCie = (i * 2);
@@ -157,7 +156,7 @@
                         });
                     }
 
-                    // 2. Mapeo No Cobrados (Col 15 a 22)
+
                     const docNoCobrados = doc(db, "no_cobrados", fechaStr);
                     batch.set(docNoCobrados, {
                         fecha: fechaStr,

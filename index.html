@@ -7,7 +7,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-        /* Refuerzo de estilos específicos para el área de Login */
+
         body.login-body { 
             justify-content: center; 
             align-items: center; 
@@ -82,7 +82,6 @@
         const mensaje = document.getElementById('mensaje');
         const btnEntrar = document.getElementById('btnEntrar');
 
-        // Al cargar la página, mostramos mensajes si hay redirección por inactividad
         const urlParams = new URLSearchParams(window.location.search);
         if (urlParams.get('reason') === 'timeout') {
             mensaje.style.color = "var(--accent)";
@@ -101,23 +100,23 @@
             const pass = document.getElementById('password').value;
 
             try {
-                // 1. Primero logueamos para poder consultar Firestore
+
                 const userCredential = await signInWithEmailAndPassword(auth, email, pass);
                 const user = userCredential.user;
 
-                // 2. Verificamos el Rol en Firestore para decidir la persistencia
+ 
                 const docSnap = await getDoc(doc(db, "usuarios", email));
 
                 if (docSnap.exists()) {
                     const rol = docSnap.data().rol;
                     
-                    // Definimos los roles que NO deben quedar abiertos
+ 
                     const jerarquicos = ['supervisor-apuntes', 'supervisor-fotocop', 'adm-eco', 'superusuario'];
                     
-                    // Si es jerárquico usamos Session (se borra al cerrar), si es operativo Local (permanece)
+
                     const persistencia = jerarquicos.includes(rol) ? browserSessionPersistence : browserLocalPersistence;
 
-                    // 3. Aplicamos la persistencia detectada
+
                     await auth.setPersistence(persistencia);
 
                     mensaje.style.color = "var(--success)";

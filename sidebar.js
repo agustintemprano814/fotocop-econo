@@ -19,7 +19,7 @@ export function cargarSidebar(paginaActiva) {
             .then((docSnap) => {
                 const rol = docSnap.exists() ? docSnap.data().rol : "restringido";
 
-                // ESTRUCTURA ACTUALIZADA SEGÚN MATRIZ DE PERMISOS
+
                 const secciones = [
                     {
                         titulo: "Principal",
@@ -78,7 +78,7 @@ export function cargarSidebar(paginaActiva) {
                     <div class="menu-scroll-container">`;
 
                 secciones.forEach(seccion => {
-                    // Solo filtramos los items que el rol actual tiene permitido ver
+
                     const itemsVisibles = seccion.items.filter(item => item.roles.includes(rol));
                     
                     if (itemsVisibles.length > 0) {

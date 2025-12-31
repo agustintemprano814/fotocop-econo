@@ -208,14 +208,14 @@
         function actualizarKPIs(unidadUsuario) {
             const hoy = new Date().toISOString().split('T')[0];
 
-            // 1. Recaudación Apuntes
+
             onSnapshot(query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Apuntes")), (snap) => {
                 let t = 0; 
                 snap.forEach(d => t += d.data().total);
                 document.getElementById('val-apuntes-caja').innerText = `$ ${t.toFixed(2)}`;
             });
 
-            // 2. Estado de Máquinas
+
             onSnapshot(collection(db, "estado_maquinas"), (snap) => {
                 let activas = 0;
                 snap.forEach(d => { 
@@ -230,7 +230,7 @@
                 }
             });
 
-            // 3. Alertas Stock
+
             onSnapshot(query(collection(db, "stock"), where("cantidad", "<=", 5)), (snap) => {
                 const elStock = document.getElementById('val-apuntes-stock');
                 if (elStock) elStock.innerText = snap.size > 0 ? `${snap.size} CRÍTICOS` : "OK";

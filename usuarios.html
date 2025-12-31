@@ -6,7 +6,7 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-        /* Layout más espacioso y centrado */
+
         .admin-main-container {
             display: flex;
             flex-direction: column;
@@ -20,7 +20,7 @@
             border-top: 5px solid var(--danger);
         }
 
-        /* Estilo de la Tabla de Usuarios */
+
         .user-list-card {
             width: 100%;
         }
@@ -37,7 +37,7 @@
         .badge-admin { background: #d1ecf1; color: #0c5460; }
         .badge-staff { background: #e2e3e5; color: #383d41; }
 
-        /* Botón eliminar minimalista */
+
         .btn-trash {
             background: none;
             border: none;
@@ -138,7 +138,7 @@
 
         let miCorreo = "";
 
-        // Solo el superusuario entra aquí
+
         verificarAcceso(['superusuario']).then(info => {
             miCorreo = info.user.email;
             cargarSidebar('usuarios');
@@ -155,7 +155,7 @@
                     const id = d.id;
                     const esMiPropioUsuario = id === miCorreo;
                     
-                    // Lógica de Badges
+                  
                     let badgeClass = "badge-staff";
                     if(u.rol === 'superusuario') badgeClass = "badge-super";
                     else if(u.rol === 'adm-eco') badgeClass = "badge-admin";
@@ -192,7 +192,7 @@
             const rol = document.getElementById('userRol').value;
             const unidad = document.getElementById('userUnidad').value;
 
-            // BLINDAJE EXTRA: Evitar creación de superusuario por consola o manipulación de DOM
+
             if (rol === 'superusuario') {
                 return alert("⚠️ Acción no permitida. Solo puede existir un Superusuario maestro.");
             }

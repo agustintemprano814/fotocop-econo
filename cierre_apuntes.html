@@ -14,7 +14,7 @@
             margin-top: 20px;
         }
         
-        /* Tarjeta de Operador */
+
         .operator-card {
             background: #f8f9fa;
             border-radius: 12px;
@@ -118,11 +118,10 @@
 
         let totalEfectivoEsperado = 0;
 
-        // 1. Verificar Seguridad e Identidad
         verificarAcceso(['superusuario', 'adm-eco', 'supervisor-apuntes', 'operario-apuntes']).then(info => {
-            cargarSidebar('cierre-apuntes'); // ID para marcar activo en sidebar
+            cargarSidebar('cierre-apuntes'); 
             
-            // Llenar tarjeta de operador
+   
             document.getElementById('operator-name').innerText = info.nombreReal;
             document.getElementById('operator-id').innerText = info.user.email;
             document.getElementById('user-initial').innerText = info.nombreReal.charAt(0).toUpperCase();
@@ -130,10 +129,10 @@
             cargarVentasDelDia();
         });
 
-        // 2. Cargar Ventas
+
         async function cargarVentasDelDia() {
             const hoy = new Date().toISOString().split('T')[0];
-            // Importante: que la colección coincida con la que usas en ventas_apuntes
+           
             const q = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Apuntes"));
             
             const querySnapshot = await getDocs(q);
@@ -152,7 +151,7 @@
             document.getElementById('kpi-total').innerText = `$ ${(efectivo + transferencia).toFixed(2)}`;
         }
 
-        // 3. Cálculo de Diferencia
+
         document.getElementById('contado-efectivo').addEventListener('input', (e) => {
             const contado = parseFloat(e.target.value) || 0;
             const dif = contado - totalEfectivoEsperado;
@@ -173,7 +172,7 @@
             }
         });
 
-        // 4. Guardar Cierre
+
         document.getElementById('formCierre').onsubmit = async (e) => {
             e.preventDefault();
             const contado = parseFloat(document.getElementById('contado-efectivo').value);

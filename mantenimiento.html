@@ -96,13 +96,12 @@
 
         const btn = document.getElementById('btnReactivar');
 
-        // Vigilante de identidad
+
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 try {
                     const userSnap = await getDoc(doc(db, "usuarios", user.email));
                     if (userSnap.exists() && userSnap.data().rol === 'superusuario') {
-                        // Si es superusuario, mostramos el botón de rescate
                         btn.style.display = 'block';
                     }
                 } catch (e) {

@@ -146,12 +146,12 @@
         import { verificarAcceso } from './security.js';
         import { cargarSidebar } from './sidebar.js';
 
-        // --- FUNCIÓN DE SEGURIDAD (ANTI-XSS) ---
+
         function sanitizar(texto) {
             if (!texto) return "";
             const temp = document.createElement('div');
             temp.textContent = texto;
-            return temp.innerHTML; // Convierte <script> en texto inofensivo
+            return temp.innerHTML; 
         }
 
         const selectCat = document.getElementById('categoriaInsumo');
@@ -160,7 +160,7 @@
         const inputPlaceholder = document.getElementById('inputPlaceholder');
         const contenedor = document.getElementById('historialContenedor');
 
-        // Bloque de acceso
+
         verificarAcceso(['supervisor', 'administrador', 'superusuario', 'operario']).then(() => {
             cargarSidebar('insumos');
             inicializarFechas();
@@ -204,7 +204,7 @@
 
             const esMantenimiento = selectCat.value === 'mantenimiento';
             
-            // ESCUDO: Sanitizamos antes de guardar
+
             const data = {
                 fecha: new Date().toISOString().split('T')[0],
                 timestamp: serverTimestamp(),
@@ -260,7 +260,6 @@
                         sValue = item.maquina || "N/A";
                     }
 
-                    // ESCUDO: Sanitizamos al mostrar (por si hay basura vieja en la DB)
                     const titulo = item.categoria === 'otros' ? sanitizar(item.detalle) : item.categoria.toUpperCase();
                     const notas = sanitizar(item.notas) || 'Sin observaciones';
 

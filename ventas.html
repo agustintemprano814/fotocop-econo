@@ -9,13 +9,13 @@
         .venta-layout { display: grid; grid-template-columns: 1fr 350px; gap: 25px; align-items: start; }
         .carrito-container { position: sticky; top: 20px; }
         
-        /* Estilo de Carrito Unificado */
+
         .item-carrito { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; gap: 12px; }
         .btn-borrar { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.9rem; transition: color 0.3s; display: flex; align-items: center; padding: 0; width: 1.2rem; height: 1.2rem; }
         .btn-borrar:hover { color: var(--danger); }
         .item-info { flex-grow: 1; font-size: 0.85rem; }
 
-        /* Selector de Categoría */
+
         .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
         .cat-card {
             border: 1px solid #ddd;
@@ -35,7 +35,7 @@
             box-shadow: 0 4px 10px rgba(164, 21, 91, 0.2);
         }
 
-        /* Selector de Pago Pequeño */
+
         .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
         .pay-card {
             border: 1px solid #ddd;
@@ -53,7 +53,7 @@
 
         .total-box { margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--primary); font-weight: bold; font-size: 1.2rem; color: var(--primary); display: flex; justify-content: space-between; }
         
-        /* Info del Turno y Operador */
+
         .turno-info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -161,7 +161,7 @@
 
         verificarAcceso(['operario-fotocop', 'supervisor-fotocop', 'adm-eco', 'superusuario']).then(info => {
             cargarSidebar('ventas');
-            // Capturamos el nombre real para mostrarlo y guardarlo
+
             nombreOperador = info.nombreReal || info.user.email.split('@')[0];
             renderSeguro(document.getElementById('displayOperador'), nombreOperador);
         });
@@ -230,7 +230,7 @@
                 items: carrito,
                 total: totalVenta,
                 metodoPago: pagoActivo,
-                operador: nombreOperador, // Se guarda el nombre real capturado en verificarAcceso
+                operador: nombreOperador, 
                 sector: "Fotocopiadora",
                 fecha: new Date().toISOString().split('T')[0],
                 timestamp: serverTimestamp()

@@ -139,7 +139,7 @@
             cargarSidebar('reportes');
         });
 
-        // Función Maestra para Aplanar Objetos (M1, M2, Caja, etc)
+
         function aplanarObjeto(obj, prefijo = '') {
             let res = {};
             for (let k in obj) {
@@ -156,7 +156,7 @@
         window.exportar = async (coleccion, nombreArchivo) => {
             const mes = parseInt(document.getElementById('selectMes').value);
             const anio = parseInt(document.getElementById('selectAnio').value);
-            const fechaFiltro = `${anio}-${(mes + 1).toString().padStart(2, '0')}`; // Formato YYYY-MM
+            const fechaFiltro = `${anio}-${(mes + 1).toString().padStart(2, '0')}`; 
 
             const btn = event.currentTarget;
             btn.disabled = true;
@@ -169,7 +169,6 @@
 
                 snap.forEach(doc => {
                     const raw = doc.data();
-                    // Filtro manual por fechaString (YYYY-MM-DD) para evitar problemas de índices complejos
                     if (raw.fechaString && raw.fechaString.startsWith(fechaFiltro)) {
                         const plano = aplanarObjeto(raw);
                         datos.push({ ID: doc.id, ...plano });

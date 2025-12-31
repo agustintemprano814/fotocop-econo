@@ -1,10 +1,10 @@
-/* VARIABLES GLOBALES - Identidad Fotocop-Econo */
+
 :root {
-    --primary: #A4155B;      /* Bordó Principal */
+    --primary: #A4155B;      
     --primary-hover: #820f48;
-    --accent: #F6CE1F;       /* Amarillo Detalle */
-    --dark: #292F36;         /* Gris Oscuro Profesional */
-    --soft: #CC978E;         /* Rosa viejo para sutiles */
+    --accent: #F6CE1F;       
+    --dark: #292F36;        
+    --soft: #CC978E;         
     --light: #f4f7f6;
     --gray: #7f8c8d;
     --danger: #e74c3c;
@@ -14,7 +14,7 @@
     --border-radius: 12px;
 }
 
-/* RESET Y BASE */
+
 * { 
     margin: 0; 
     padding: 0; 
@@ -36,7 +36,7 @@ body {
     line-height: 1.6;
 }
 
-/* --- LOGO CONTAINER --- */
+
 .logo-container {
     width: 120px;
     height: 120px;
@@ -57,7 +57,7 @@ body {
     object-fit: cover; 
 }
 
-/* BARRA LATERAL (SIDEBAR) */
+
 .sidebar {
     width: 70px;
     height: 100vh;
@@ -104,7 +104,7 @@ body {
 }
 .sidebar:hover .logo-text { opacity: 1; }
 
-/* TÍTULOS DE SECCIÓN DINÁMICOS */
+
 .sidebar-section-title {
     font-size: 0.62rem;
     color: rgba(255,255,255,0.35);
@@ -120,7 +120,7 @@ body {
     align-items: center;
 }
 
-/* Ocultar texto y mostrar línea cuando la barra está cerrada */
+
 .sidebar:not(:hover) .sidebar-section-title {
     color: transparent;
     padding: 25px 0 10px 0;
@@ -136,7 +136,7 @@ body {
     top: 50%;
 }
 
-/* Mostrar texto y ocultar línea cuando la barra está abierta */
+
 .sidebar:hover .sidebar-section-title {
     color: rgba(255,255,255,0.35);
     padding-left: 25px;
@@ -194,7 +194,7 @@ body {
     color: white;
 }
 
-/* CONTENIDO PRINCIPAL */
+
 .main-content {
     flex-grow: 1;
     margin-left: 70px;
@@ -213,7 +213,7 @@ body {
     border: 1px solid rgba(255,255,255,0.5);
 }
 
-/* CARDS DE MÓDULOS (Efecto 3D) */
+
 .module-card {
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
@@ -227,7 +227,7 @@ body {
     box-shadow: var(--shadow);
 }
 
-/* TITULOS GENERALES */
+
 h2 { 
     color: var(--primary); 
     border-bottom: 3px solid var(--accent); 
@@ -238,7 +238,7 @@ h2 {
     letter-spacing: 1px;
 }
 
-/* BOTONES */
+
 button, .btn {
     width: 100%;
     padding: 14px;
@@ -258,7 +258,7 @@ button:hover, .btn:hover {
     transform: translateY(-2px);
 }
 
-/* KPIs */
+
 .kpi-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
@@ -274,25 +274,25 @@ button:hover, .btn:hover {
     box-shadow: 0 4px 15px rgba(0,0,0,0.05);
 }
 
-/* FORMULARIOS */
+
 .form-group { margin-bottom: 20px; }
 label { display: block; margin-bottom: 8px; font-weight: 700; color: var(--primary); font-size: 0.85rem; text-transform: uppercase; }
 input, select, textarea { width: 100%; padding: 12px; border: 2px solid rgba(0,0,0,0.1); border-radius: 10px; background: white; transition: all 0.3s; font-size: 1rem; }
 input:focus { border-color: var(--primary); outline: none; }
 
-/* TABLAS */
+
 .table-container { overflow-x: auto; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
 table { width: 100%; border-collapse: collapse; background: white; }
 th { background: var(--dark); color: white; padding: 15px; text-align: left; font-size: 0.85rem; text-transform: uppercase; }
 td { padding: 15px; border-bottom: 1px solid #eee; }
 
-/* FOOTER SIDEBAR */
+
 .sidebar-footer {
     padding: 10px 0;
     border-top: 1px solid rgba(255,255,255,0.1);
 }
 
-/* PANIC ZONE */
+
 .panic-zone {
     margin-top: 40px;
     padding: 15px 25px;

@@ -119,19 +119,19 @@
 
         let chartEvolucion, chartPagos;
 
-        // 1. Configuración Inicial de Fechas (Formato String YYYY-MM-DD)
+
         const hoy = new Date();
         document.getElementById('fechaHasta').value = hoy.toISOString().split('T')[0];
         const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
         document.getElementById('fechaDesde').value = inicioMes.toISOString().split('T')[0];
 
-        // 2. Control de Acceso
+
         verificarAcceso(['administrador', 'superusuario', 'adm-eco']).then(() => {
             cargarSidebar('reportes'); 
-            cargarDashboard(); // Carga inicial
+            cargarDashboard(); 
         });
 
-        // 3. Función Principal de Carga (CORREGIDA PARA STRINGS)
+
         async function cargarDashboard() {
             const desde = document.getElementById('fechaDesde').value;
             const hasta = document.getElementById('fechaHasta').value;
@@ -140,7 +140,7 @@
             if (!desde || !hasta) return;
 
             try {
-                // Consulta de Ventas (Filtra por STRING de fecha)
+
                 const qVentas = query(
                     collection(db, "ventas"), 
                     where("fecha", ">=", desde), 
@@ -148,7 +148,7 @@
                 );
                 const snapVentas = await getDocs(qVentas);
 
-                // Consulta de Cierres (Usa fechaString definido en el módulo de cierres)
+
                 const qCierres = query(
                     collection(db, "cierres_diarios"), 
                     where("fechaString", ">=", desde), 
@@ -164,7 +164,7 @@
             }
         }
 
-        // 4. Lógica de Procesamiento
+
         function procesarDatos(snapVentas, snapCierres, sectorFiltro) {
             let recaudacion = 0;
             let gastos = 0;
@@ -173,7 +173,7 @@
             let transferencia = 0;
             const ventasPorDia = {};
 
-            // Procesar cada ticket de venta individual
+
             snapVentas.forEach(doc => {
                 const data = doc.data();
                 if (sectorFiltro !== 'todos' && data.sector !== sectorFiltro) return;
@@ -184,25 +184,25 @@
                 if (data.metodoPago === 'efectivo') efectivo += total;
                 else transferencia += total;
 
-                // Agrupar para el gráfico de línea
+
                 ventasPorDia[data.fecha] = (ventasPorDia[data.fecha] || 0) + total;
             });
 
-            // Procesar cada cierre de caja (para gastos y faltantes)
+
             snapCierres.forEach(doc => {
                 const data = doc.data();
                 if (sectorFiltro !== 'todos' && data.sector !== sectorFiltro) return;
 
-                // Sumamos gastos (buscando en las dos estructuras posibles de caja)
+
                 const g = data.caja?.gastos || data.gastos || 0;
                 gastos += Number(g);
 
-                // Sumamos diferencias (faltante/sobrante)
+
                 const d = data.caja?.diferencia || data.diferencia || 0;
                 diferencia += Number(d);
             });
 
-            // Actualizar KPIs en el DOM
+ 
             document.getElementById('kpiRecaudacion').innerText = `$ ${recaudacion.toFixed(2)}`;
             document.getElementById('kpiGastos').innerText = `$ ${gastos.toFixed(2)}`;
             document.getElementById('kpiNeto').innerText = `$ ${(recaudacion - gastos).toFixed(2)}`;
@@ -214,7 +214,7 @@
             renderizarGraficos(ventasPorDia, efectivo, transferencia);
         }
 
-        // 5. Renderización de Gráficos (Chart.js)
+
         function renderizarGraficos(ventasPorDia, efectivo, transferencia) {
             if (chartEvolucion) chartEvolucion.destroy();
             if (chartPagos) chartPagos.destroy();
@@ -222,7 +222,7 @@
             const labels = Object.keys(ventasPorDia).sort();
             const values = labels.map(l => ventasPorDia[l]);
 
-            // Gráfico Lineal (Evolución)
+
             chartEvolucion = new Chart(document.getElementById('chartEvolucion'), {
                 type: 'line',
                 data: {
@@ -243,7 +243,7 @@
                 }
             });
 
-            // Gráfico de Dona (Pagos)
+
             chartPagos = new Chart(document.getElementById('chartPagos'), {
                 type: 'doughnut',
                 data: {
@@ -262,7 +262,7 @@
             });
         }
 
-        // Evento del botón filtrar
+
         document.getElementById('btnFiltrar').onclick = cargarDashboard;
     </script>
 </body>

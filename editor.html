@@ -61,7 +61,7 @@
         .audit-tag { font-size: 0.7rem; color: #94a3b8; margin-top: 20px; font-style: italic; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        /* Estilo para destacar el buscador por ID */
+
         .id-input { border: 2px solid #cbd5e1 !important; background: #fffbeb !important; }
     </style>
 </head>
@@ -144,7 +144,7 @@
             resultsDiv.innerHTML = "";
             resultsDiv.style.display = 'none';
 
-            // CASO A: Búsqueda Directa por ID
+
             if(idDirecto) {
                 try {
                     const snap = await getDoc(doc(db, col, idDirecto));
@@ -157,7 +157,7 @@
                 return;
             }
 
-            // CASO B: Búsqueda por Filtros
+
             const fecha = document.getElementById('filterFecha').value;
             const email = document.getElementById('filterEmail').value.trim().toLowerCase();
             
@@ -196,7 +196,7 @@
         };
 
         function cargarParaEditar(id, data, col) {
-            // Seguridad por Sector
+
             if(infoUsuario.rol === 'supervisor-fotocop' && data.sector === 'Apuntes') {
                 return alert("⛔ Acceso Denegado: Su rol solo permite editar Fotocopiadora.");
             }
@@ -212,7 +212,7 @@
             const modInfo = data.ultimaModificacionPor ? `Editado por: ${data.ultimaModificacionPor}` : "Registro original.";
             document.getElementById('auditMsg').innerText = `ℹ️ ${modInfo} - Al guardar se registrará tu firma digital.`;
 
-            // Iterar campos excluyendo objetos y metadatos
+
             for(let key in data) {
                 if(typeof data[key] !== 'object' && !['fecha','timestamp','fechaString','ultimaModificacionPor','fechaModificacion'].includes(key)) {
                     container.innerHTML += `
