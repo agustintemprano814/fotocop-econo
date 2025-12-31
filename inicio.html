@@ -101,59 +101,53 @@
             </div>
 
             <div class="module-grid">
-                <div class="card module-card" onclick="toggleModulo(this)">
+                <div class="card module-card" id="mod-venta">
                     <span>💰</span>
                     <h3>Punto de Venta</h3>
                     <div class="module-options">
-                        <button class="btn btn-primary" onclick="location.href='apuntes.html'">📚 Sector Apuntes</button>
-                        <button class="btn btn-primary" onclick="location.href='ventas.html'">🖨️ Sector Fotocopiadora</button>
+                        <button class="btn btn-primary" id="btn-nav-apuntes">📚 Sector Apuntes</button>
+                        <button class="btn btn-primary" id="btn-nav-ventas">🖨️ Sector Fotocopiadora</button>
                     </div>
                 </div>
 
-                <div class="card module-card" onclick="toggleModulo(this)">
+                <div class="card module-card" id="mod-almacen">
                     <span>📦</span>
                     <h3>Gestión de Almacén</h3>
                     <div class="module-options">
-                        <button class="btn btn-primary" onclick="location.href='stock.html'">🛒 Stock Apuntes</button>
-                        <button class="btn btn-primary" onclick="location.href='insumos.html'">🛠️ Insumos</button>
-                        <button class="btn btn-primary" onclick="location.href='estado.html'">⚙️ Máquinas</button>
-                        <button class="btn btn-primary" onclick="location.href='editor.html'">✏️ Editor</button>
+                        <button class="btn btn-primary" id="btn-nav-stock">🛒 Stock Apuntes</button>
+                        <button class="btn btn-primary" id="btn-nav-insumos">🛠️ Insumos</button>
+                        <button class="btn btn-primary" id="btn-nav-estado">⚙️ Máquinas</button>
+                        <button class="btn btn-primary" id="btn-nav-editor">✏️ Editor</button>
                     </div>
                 </div>
 
-                <div class="card module-card" id="mod-admin" style="display:none;" onclick="toggleModulo(this)">
+                <div class="card module-card" id="mod-admin" style="display:none;">
                     <span>📑</span>
                     <h3>Administración</h3>
                     <p>Control de cajas y exportación por sector.</p>
                     <div class="module-options">
-                        <button class="btn btn-primary" onclick="event.stopPropagation(); location.href='cierre_apuntes.html'">
-                            📚 Cierre Apuntes 
-                        </button>
-                        <button class="btn btn-primary" onclick="event.stopPropagation(); location.href='cierres.html'">
-                            🖨️ Cierre Fotocopiadora
-                        </button>
-                        <button class="btn btn-primary" onclick="event.stopPropagation(); location.href='reportes.html'">
-                            📂 Exportar Reportes Globales
-                        </button>
+                        <button class="btn btn-primary" id="btn-nav-cierre-ap">📚 Cierre Apuntes</button>
+                        <button class="btn btn-primary" id="btn-nav-cierre-fo">🖨️ Cierre Fotocopiadora</button>
+                        <button class="btn btn-primary" id="btn-nav-reportes">📂 Exportar Reportes Globales</button>
                     </div>
                 </div>
 
-                <div class="card module-card" id="mod-control" style="display:none;" onclick="toggleModulo(this)">
+                <div class="card module-card" id="mod-control" style="display:none;">
                     <span>📊</span>
                     <h3>Panel de Control</h3>
                     <div class="module-options">
-                        <button class="btn btn-accent" onclick="location.href='dashboard-financiero.html'">📈 Finanzas</button>
-                        <button class="btn btn-accent" onclick="location.href='rendimiento.html'">📉 Rendimiento</button>
+                        <button class="btn btn-accent" id="btn-nav-dash-fin">📈 Finanzas</button>
+                        <button class="btn btn-accent" id="btn-nav-dash-tec">📉 Rendimiento</button>
                     </div>
                 </div>
 
-                <div class="card module-card" id="mod-sistema" style="display:none;" onclick="toggleModulo(this)">
+                <div class="card module-card" id="mod-sistema" style="display:none;">
                     <span>🛡️</span>
                     <h3>Gestión de Sistemas</h3>
                     <div class="module-options">
-                        <button class="btn btn-dark" onclick="location.href='usuarios.html'">👥 Usuarios</button>
-                        <button class="btn btn-dark" onclick="location.href='configuracion.html'">⚙️ Configuración</button>
-                        <button class="btn btn-dark" onclick="location.href='importador.html'">📥 Importador</button>
+                        <button class="btn btn-dark" id="btn-nav-usuarios">👥 Usuarios</button>
+                        <button class="btn btn-dark" id="btn-nav-config">⚙️ Configuración</button>
+                        <button class="btn btn-dark" id="btn-nav-import">📥 Importador</button>
                     </div>
                 </div>
             </div>
@@ -163,89 +157,11 @@
                     <h4 style="margin:0; color:#c53030;">⚠️ Protocolo de Emergencia</h4>
                     <p style="margin:5px 0 0 0; font-size:0.75rem; color:#742a2a;">Cierra el acceso público al sistema inmediatamente.</p>
                 </div>
-                <button class="btn-panic" onclick="activarMantenimiento()">Apagar Sistema</button>
+                <button class="btn-panic" id="btn-panic-action">Apagar Sistema</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, query, where, onSnapshot, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { cargarSidebar } from './sidebar.js';
-        import { verificarAcceso, renderSeguro } from './security.js';
-
-        verificarAcceso(['superusuario', 'adm-eco', 'supervisor-apuntes', 'supervisor-fotocop', 'operario-apuntes', 'operario-fotocop']).then(info => {
-            cargarSidebar('inicio');
-            renderSeguro(document.getElementById('saludo'), `¡Hola, ${info.idProfesional}!`);
-            document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
-
-            const rol = info.rol;
-
-            if (['superusuario', 'adm-eco'].includes(rol)) {
-                document.getElementById('mod-admin').style.display = 'block';
-                document.getElementById('mod-control').style.display = 'block';
-                document.getElementById('kpi-apuntes-caja').style.display = 'block';
-                document.getElementById('kpi-foto-caja').style.display = 'block';
-            }
-            
-            if (rol === 'superusuario') {
-                document.getElementById('mod-sistema').style.display = 'block';
-                document.getElementById('panicZone').style.display = 'flex';
-            }
-
-            document.getElementById('kpi-apuntes-stock').style.display = 'block';
-            document.getElementById('kpi-foto-maquinas').style.display = 'block';
-
-            actualizarKPIs(info.unidad);
-        });
-
-        window.toggleModulo = (card) => {
-            const isExpanded = card.classList.contains('expanded');
-            document.querySelectorAll('.module-card').forEach(c => c.classList.remove('expanded'));
-            if (!isExpanded) card.classList.add('expanded');
-        };
-
-        function actualizarKPIs(unidadUsuario) {
-            const hoy = new Date().toISOString().split('T')[0];
-
-
-            onSnapshot(query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Apuntes")), (snap) => {
-                let t = 0; 
-                snap.forEach(d => t += d.data().total);
-                document.getElementById('val-apuntes-caja').innerText = `$ ${t.toFixed(2)}`;
-            });
-
-
-            onSnapshot(collection(db, "estado_maquinas"), (snap) => {
-                let activas = 0;
-                snap.forEach(d => { 
-                    const data = d.data();
-                    const estadoTexto = data.estado ? data.estado.toLowerCase() : (data.activa ? 'online' : 'offline');
-                    if(estadoTexto === 'online') activas++;
-                });
-                const elMaquinas = document.getElementById('val-foto-maquinas');
-                if (elMaquinas) {
-                    elMaquinas.innerText = `${activas}/${snap.size} Online`;
-                    elMaquinas.style.color = (activas < snap.size) ? "var(--danger)" : "var(--dark)";
-                }
-            });
-
-
-            onSnapshot(query(collection(db, "stock"), where("cantidad", "<=", 5)), (snap) => {
-                const elStock = document.getElementById('val-apuntes-stock');
-                if (elStock) elStock.innerText = snap.size > 0 ? `${snap.size} CRÍTICOS` : "OK";
-            });
-        }
-
-        window.activarMantenimiento = async () => {
-            if(confirm("¿Desea apagar el sistema por seguridad?")){
-                try {
-                    await updateDoc(doc(db, "configuracion", "global"), { modoMantenimiento: true });
-                    alert("⚠️ El sistema ha sido puesto fuera de línea.");
-                    location.reload();
-                } catch (e) { alert("Error de permisos."); }
-            }
-        };
-    </script>
+    <script type="module" src="inicio.js"></script>
 </body>
 </html>
