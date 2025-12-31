@@ -12,7 +12,7 @@ verificarAcceso().then(info => {
     cargarSidebar('inicio');
     
     // Renderizado seguro de bienvenida
-    renderSeguro(document.getElementById('saludo'), `¡Hola, ${info.nombreReal}!`);
+    renderSeguro(document.getElementById('saludo'), `¡Hola, ${info.idProfesional}!`);
     document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString('es-AR', { 
         weekday: 'long', day: 'numeric', month: 'long' 
     });

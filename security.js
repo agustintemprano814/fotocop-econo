@@ -1,6 +1,6 @@
 /**
  * @file security.js
- * @description Capa de seguridad v5.0 - Control de Acceso Basado en Roles (RBAC)
+ * @description Capa de seguridad v5.1 - RBAC y Renderizado Seguro
  */
 
 import { auth, db } from './firebase-config.js';
@@ -11,7 +11,6 @@ const host = window.location.hostname;
 const esLocal = host === "localhost" || host === "127.0.0.1" || host === "";
 const esPaginaLogin = window.location.pathname.endsWith('index.html') || window.location.pathname === '/' || window.location.pathname.includes('index');
 const esPaginaMantenimiento = window.location.href.includes('mantenimiento.html');
-
 
 const PERMISOS_PAGINAS = {
     'apuntes.html': ['operario-apuntes', 'supervisor-apuntes', 'superusuario'],
@@ -30,9 +29,18 @@ const PERMISOS_PAGINAS = {
     'importador.html': ['superusuario']
 };
 
-
 if (!esPaginaLogin && !esPaginaMantenimiento) {
     document.documentElement.style.display = 'none';
+}
+
+/**
+ * Función para escribir texto en el HTML de forma segura (Previene XSS)
+ * Se exporta para ser usada en los archivos .js externos
+ */
+export function renderSeguro(elemento, texto) {
+    if (elemento) {
+        elemento.textContent = texto;
+    }
 }
 
 function activarVigilanteMantenimiento(esSuperusuario) {
@@ -74,15 +82,14 @@ export async function verificarAcceso(rolesManuales = null) {
                 const userData = docSnap.data();
                 const rol = userData.rol;
                 const esSuper = rol === 'superusuario';
-                const nombreReal = userData.nombreReal || user.email.split('@')[0];
-
+                
+                // Prioridad al nombreReal, sino usa idProfesional, sino el email
+                const nombreReal = userData.nombreReal || userData.idProfesional || user.email.split('@')[0];
 
                 activarVigilanteMantenimiento(esSuper);
 
-
                 const pathParts = window.location.pathname.split('/');
                 const paginaActual = pathParts[pathParts.length - 1];
-                
 
                 if (PERMISOS_PAGINAS[paginaActual]) {
                     const rolesPermitidos = PERMISOS_PAGINAS[paginaActual];
@@ -93,17 +100,16 @@ export async function verificarAcceso(rolesManuales = null) {
                     }
                 }
 
-
                 if (rolesManuales && !rolesManuales.includes(rol) && !esSuper) {
                     alert("⛔ No autorizado para esta acción.");
                     window.location.href = "inicio.html";
                     return;
                 }
 
- 
                 document.documentElement.style.display = 'block';
                 document.body.style.display = 'block';
 
+                // Devolvemos el objeto con nombreReal para que inicio.js lo reconozca
                 resolve({ user, rol, nombreReal, userData });
 
             } catch (error) {
