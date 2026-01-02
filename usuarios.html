@@ -6,56 +6,16 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-
-        .admin-main-container {
-            display: flex;
-            flex-direction: column;
-            gap: 30px;
-            align-items: flex-start;
-        }
-
-        .form-user-card {
-            width: 100%;
-            max-width: 650px;
-            border-top: 5px solid var(--danger);
-        }
-
-
-        .user-list-card {
-            width: 100%;
-        }
-
-        .rol-badge {
-            padding: 4px 10px;
-            border-radius: 20px;
-            font-size: 0.7rem;
-            font-weight: 700;
-            text-transform: uppercase;
-            display: inline-block;
-        }
+        .admin-main-container { display: flex; flex-direction: column; gap: 30px; align-items: flex-start; }
+        .form-user-card { width: 100%; max-width: 650px; border-top: 5px solid var(--danger); }
+        .user-list-card { width: 100%; }
+        .rol-badge { padding: 4px 10px; border-radius: 20px; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; display: inline-block; }
         .badge-super { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .badge-admin { background: #d1ecf1; color: #0c5460; }
         .badge-staff { background: #e2e3e5; color: #383d41; }
-
-
-        .btn-trash {
-            background: none;
-            border: none;
-            cursor: pointer;
-            font-size: 1rem;
-            color: #ccc;
-            transition: all 0.2s;
-            padding: 5px;
-        }
-        .btn-trash:hover {
-            color: var(--danger);
-            transform: scale(1.1);
-        }
-
-        .user-info-text {
-            font-size: 0.85rem;
-            line-height: 1.2;
-        }
+        .btn-trash { background: none; border: none; cursor: pointer; font-size: 1rem; color: #ccc; transition: all 0.2s; padding: 5px; }
+        .btn-trash:hover { color: var(--danger); transform: scale(1.1); }
+        .user-info-text { font-size: 0.85rem; line-height: 1.2; }
     </style>
 </head>
 <body>
@@ -130,96 +90,6 @@
         </div>
     </div>
 
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, doc, setDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { cargarSidebar } from './sidebar.js';
-        import { verificarAcceso, sanitizar } from './security.js';
-
-        let miCorreo = "";
-
-
-        verificarAcceso(['superusuario']).then(info => {
-            miCorreo = info.user.email;
-            cargarSidebar('usuarios');
-            escucharUsuarios();
-        });
-
-        function escucharUsuarios() {
-            onSnapshot(collection(db, "usuarios"), (snapshot) => {
-                const tbody = document.getElementById('tablaUsuarios');
-                tbody.innerHTML = "";
-                
-                snapshot.forEach(d => {
-                    const u = d.data();
-                    const id = d.id;
-                    const esMiPropioUsuario = id === miCorreo;
-                    
-                  
-                    let badgeClass = "badge-staff";
-                    if(u.rol === 'superusuario') badgeClass = "badge-super";
-                    else if(u.rol === 'adm-eco') badgeClass = "badge-admin";
-
-                    const tr = document.createElement('tr');
-                    tr.innerHTML = `
-                        <td>
-                            <div class="user-info-text">
-                                <strong>${sanitizar(u.nombre)}</strong><br>
-                                <small style="color:var(--gray)">${id}</small>
-                            </div>
-                        </td>
-                        <td>
-                            <span class="rol-badge ${badgeClass}">${u.rol}</span>
-                            <small style="margin-left:5px; color:var(--gray)">(${u.unidad.toUpperCase()})</small>
-                        </td>
-                        <td style="text-align: center;">
-                            ${esMiPropioUsuario ? 
-                                '<small style="color:var(--primary); font-weight:bold;">TÚ</small>' : 
-                                `<button class="btn-trash" onclick="eliminarUsuario('${id}')" title="Revocar Acceso">🗑️</button>`
-                            }
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            });
-        }
-
-        document.getElementById('formUser').onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const email = sanitizar(document.getElementById('userEmail').value.trim().toLowerCase());
-            const nombre = sanitizar(document.getElementById('userNombre').value.trim());
-            const rol = document.getElementById('userRol').value;
-            const unidad = document.getElementById('userUnidad').value;
-
-
-            if (rol === 'superusuario') {
-                return alert("⚠️ Acción no permitida. Solo puede existir un Superusuario maestro.");
-            }
-
-            try {
-                await setDoc(doc(db, "usuarios", email), {
-                    nombre,
-                    rol,
-                    unidad,
-                    fechaAlta: new Date().toISOString()
-                });
-                alert("✅ Credenciales asignadas con éxito.");
-                document.getElementById('formUser').reset();
-            } catch (error) {
-                alert("❌ Error de permisos en la base de datos.");
-            }
-        };
-
-        window.eliminarUsuario = async (id) => {
-            if (confirm(`¿Revocar permanentemente el acceso a ${id}?`)) {
-                try {
-                    await deleteDoc(doc(db, "usuarios", id));
-                } catch (error) {
-                    alert("No tiene permisos para esta acción.");
-                }
-            }
-        };
-    </script>
+    <script type="module" src="usuarios.js"></script>
 </body>
 </html>

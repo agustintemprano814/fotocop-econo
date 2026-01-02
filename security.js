@@ -82,9 +82,8 @@ export async function verificarAcceso(rolesManuales = null) {
                 const userData = docSnap.data();
                 const rol = userData.rol;
                 const esSuper = rol === 'superusuario';
-                
-                // Prioridad al nombreReal, sino usa idProfesional, sino el email
-                const nombreReal = userData.nombreReal || userData.idProfesional || user.email.split('@')[0];
+
+                const nombreReal = userData.nombre || userData.idProfesional || user.email.split('@')[0];
 
                 activarVigilanteMantenimiento(esSuper);
 

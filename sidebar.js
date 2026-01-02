@@ -62,7 +62,7 @@ export function cargarSidebar(paginaActiva) {
                         titulo: "Sistema",
                         items: [
                             { id: 'usuarios', icon: '👥', label: 'Usuarios', url: 'usuarios.html', roles: ['superusuario'] },
-                            { id: 'config', icon: '⚙️', label: 'Configuración', url: 'configuracio.html', roles: ['adm-eco', 'superusuario'] },
+                            { id: 'config', icon: '⚙️', label: 'Configuración', url: 'configuracion.html', roles: ['adm-eco', 'superusuario'] },
                             { id: 'admin', icon: '📥', label: 'Importador', url: 'importador.html', roles: ['superusuario'] }
                         ]
                     }

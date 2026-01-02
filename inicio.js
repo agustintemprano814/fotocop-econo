@@ -8,14 +8,10 @@ import { cargarSidebar } from './sidebar.js';
 import { verificarAcceso, renderSeguro } from './security.js';
 
 // --- INICIALIZACIÓN Y SEGURIDAD ---
-verificarAcceso().then(info => {
-    cargarSidebar('inicio');
-    
-    // Renderizado seguro de bienvenida
-    renderSeguro(document.getElementById('saludo'), `¡Hola, ${info.idProfesional}!`);
-    document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString('es-AR', { 
-        weekday: 'long', day: 'numeric', month: 'long' 
-    });
+       verificarAcceso(['superusuario', 'adm-eco', 'supervisor-apuntes', 'supervisor-fotocop', 'operario-apuntes', 'operario-fotocop']).then(info => {
+            cargarSidebar('inicio');
+            renderSeguro(document.getElementById('saludo'), `¡Hola, ${info.nombreReal}!`);
+            document.getElementById('fechaHoy').innerText = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
 
     const rol = info.rol;
 

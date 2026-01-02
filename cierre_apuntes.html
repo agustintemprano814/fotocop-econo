@@ -7,45 +7,10 @@
     <link rel="stylesheet" href="style.css">
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
-        .cierre-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 25px;
-            margin-top: 20px;
-        }
-        
-
-        .operator-card {
-            background: #f8f9fa;
-            border-radius: 12px;
-            padding: 15px;
-            margin-bottom: 25px;
-            border-left: 5px solid var(--accent);
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .operator-avatar {
-            width: 45px;
-            height: 45px;
-            background: var(--primary);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-weight: bold;
-            font-size: 1.2rem;
-        }
-
-        #monto-diferencia {
-            font-size: 3rem;
-            font-weight: 800;
-            margin: 15px 0;
-            transition: color 0.3s;
-        }
-
+        .cierre-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 25px; margin-top: 20px; }
+        .operator-card { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 25px; border-left: 5px solid var(--accent); display: flex; align-items: center; gap: 15px; }
+        .operator-avatar { width: 45px; height: 45px; background: var(--primary); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; }
+        #monto-diferencia { font-size: 3rem; font-weight: 800; margin: 15px 0; transition: color 0.3s; }
         @media (max-width: 900px) { .cierre-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -110,96 +75,6 @@
         </div>
     </main>
 
-    <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { collection, query, where, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { cargarSidebar } from './sidebar.js';
-        import { verificarAcceso, sanitizar } from './security.js';
-
-        let totalEfectivoEsperado = 0;
-
-        verificarAcceso(['superusuario', 'adm-eco', 'supervisor-apuntes', 'operario-apuntes']).then(info => {
-            cargarSidebar('cierre-apuntes'); 
-            
-   
-            document.getElementById('operator-name').innerText = info.nombreReal;
-            document.getElementById('operator-id').innerText = info.user.email;
-            document.getElementById('user-initial').innerText = info.nombreReal.charAt(0).toUpperCase();
-            
-            cargarVentasDelDia();
-        });
-
-
-        async function cargarVentasDelDia() {
-            const hoy = new Date().toISOString().split('T')[0];
-           
-            const q = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Apuntes"));
-            
-            const querySnapshot = await getDocs(q);
-            let efectivo = 0;
-            let transferencia = 0;
-
-            querySnapshot.forEach((doc) => {
-                const venta = doc.data();
-                if (venta.metodoPago === 'efectivo') efectivo += venta.total;
-                else transferencia += venta.total;
-            });
-
-            totalEfectivoEsperado = efectivo;
-            document.getElementById('kpi-efectivo').innerText = `$ ${efectivo.toFixed(2)}`;
-            document.getElementById('kpi-transferencia').innerText = `$ ${transferencia.toFixed(2)}`;
-            document.getElementById('kpi-total').innerText = `$ ${(efectivo + transferencia).toFixed(2)}`;
-        }
-
-
-        document.getElementById('contado-efectivo').addEventListener('input', (e) => {
-            const contado = parseFloat(e.target.value) || 0;
-            const dif = contado - totalEfectivoEsperado;
-            const divMonto = document.getElementById('monto-diferencia');
-            const pMensaje = document.getElementById('mensaje-diferencia');
-
-            divMonto.innerText = `$ ${dif.toFixed(2)}`;
-
-            if (Math.abs(dif) < 0.01) {
-                divMonto.style.color = "var(--success)";
-                pMensaje.innerText = "✅ CAJA BALANCEADA";
-            } else if (dif > 0) {
-                divMonto.style.color = "var(--primary)";
-                pMensaje.innerText = "⚠️ SOBRANTE";
-            } else {
-                divMonto.style.color = "var(--danger)";
-                pMensaje.innerText = "❌ FALTANTE";
-            }
-        });
-
-
-        document.getElementById('formCierre').onsubmit = async (e) => {
-            e.preventDefault();
-            const contado = parseFloat(document.getElementById('contado-efectivo').value);
-            
-            if(!confirm(`¿Confirmas el cierre con una diferencia de $ ${ (contado - totalEfectivoEsperado).toFixed(2) }?`)) return;
-
-            try {
-                await addDoc(collection(db, "cierres_diarios"), {
-                    fecha: serverTimestamp(),
-                    fechaString: new Date().toISOString().split('T')[0],
-                    sector: 'Apuntes',
-                    operador: auth.currentUser.email,
-                    nombreOperador: document.getElementById('operator-name').innerText,
-                    esperadoEfectivo: totalEfectivoEsperado,
-                    rendidoEfectivo: contado,
-                    diferencia: contado - totalEfectivoEsperado,
-                    observaciones: sanitizar(document.getElementById('observaciones').value),
-                    estado: 'Pendiente'
-                });
-
-                alert("✅ Cierre enviado correctamente.");
-                window.location.href = "inicio.html";
-            } catch (error) {
-                alert("Error al guardar el cierre.");
-                console.error(error);
-            }
-        };
-    </script>
+    <script type="module" src="cierre_apuntes.js"></script>
 </body>
 </html>

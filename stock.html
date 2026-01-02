@@ -18,33 +18,10 @@
         }
         .btn-export { background-color: #27ae60; color: white; width: auto; padding: 10px 20px; font-size: 0.8rem; }
         .btn-danger-zone { background-color: var(--danger); color: white; width: auto; padding: 10px 20px; font-size: 0.8rem; }
-        
-
-        .stock-main-layout {
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start; 
-            width: 100%;
-        }
-
-        .form-container-card {
-            width: 75%;
-            max-width: 850px;
-            margin-left: 0;
-            margin-bottom: 30px;
-        }
-
-
-        .historial-full-width {
-            width: 100%;
-            margin-top: 20px;
-        }
-
-        .table-scroll {
-            max-height: 500px;
-            overflow-y: auto;
-        }
-
+        .stock-main-layout { display: flex; flex-direction: column; align-items: flex-start; width: 100%; }
+        .form-container-card { width: 75%; max-width: 850px; margin-left: 0; margin-bottom: 30px; }
+        .historial-full-width { width: 100%; margin-top: 20px; }
+        .table-scroll { max-height: 500px; overflow-y: auto; }
 
         @media (max-width: 768px) {
             .form-container-card { width: 100%; }
@@ -57,8 +34,8 @@
     <div class="main-content">
         <div class="container">
             <div id="zonaSuper" class="admin-tools">
-                <button onclick="exportarInventario()" class="btn btn-export">📊 Exportar Inventario</button>
-                <button onclick="borrarBaseCompleta()" class="btn btn-danger-zone">⚠️ Borrar Todo el Stock</button>
+                <button id="btnExportar" class="btn btn-export">📊 Exportar Inventario</button>
+                <button id="btnBorrarTodo" class="btn btn-danger-zone">⚠️ Borrar Todo el Stock</button>
             </div>
 
             <h2>📦 Gestión de Stock e Inventario</h2>
@@ -131,117 +108,6 @@
         </div>
     </div>
 
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, doc, getDoc, getDocs, setDoc, addDoc, query, orderBy, limit, onSnapshot, serverTimestamp, writeBatch } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { cargarSidebar } from './sidebar.js';
-        import { verificarAcceso, sanitizar } from './security.js';
-
-        let userMail = "";
-
-        verificarAcceso(['supervisor-apuntes', 'adm-eco', 'superusuario']).then(info => {
-            userMail = info.user.email;
-            cargarSidebar('stock');
-            escucharCambios();
-            
-            if(info.rol === 'superusuario') {
-                document.getElementById('zonaSuper').style.display = 'flex';
-            }
-        });
-
-        const form = document.getElementById('formStock');
-        const inputCodigo = document.getElementById('codigoBarras');
-
-        inputCodigo.addEventListener('change', async () => {
-            const code = inputCodigo.value.trim();
-            if (!code) return;
-            const docSnap = await getDoc(doc(db, "stock", code));
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                document.getElementById('nombreMaterial').value = data.nombre;
-                document.getElementById('precio').value = data.precio;
-                document.getElementById('cantidadStock').value = data.cantidad;
-            } else {
-                document.getElementById('nombreMaterial').value = "";
-                document.getElementById('precio').value = "";
-                document.getElementById('cantidadStock').value = 0;
-            }
-        });
-
-        form.onsubmit = async (e) => {
-            e.preventDefault();
-            const code = sanitizar(inputCodigo.value.trim());
-            const nombre = sanitizar(document.getElementById('nombreMaterial').value);
-            const precio = parseFloat(document.getElementById('precio').value);
-            const ajuste = parseInt(document.getElementById('ajusteStock').value);
-            const stockActual = parseInt(document.getElementById('cantidadStock').value);
-
-            try {
-                const nuevoStock = stockActual + ajuste;
-                await setDoc(doc(db, "stock", code), {
-                    nombre, precio, cantidad: nuevoStock, ultimaMod: serverTimestamp()
-                }, { merge: true });
-
-                await addDoc(collection(db, "movimientos_stock"), {
-                    codigo: code, nombre, ajuste, operador: userMail, fecha: serverTimestamp()
-                });
-
-                alert("✅ Stock actualizado");
-                form.reset();
-                inputCodigo.focus();
-            } catch (err) { alert("Error al guardar"); }
-        };
-
-        function escucharCambios() {
-            onSnapshot(collection(db, "stock"), (snap) => {
-                document.getElementById('totalArticulos').innerText = snap.size;
-            });
-
-            const q = query(collection(db, "movimientos_stock"), orderBy("fecha", "desc"), limit(50));
-            onSnapshot(q, (snapshot) => {
-                const tbody = document.getElementById('tablaHistorial');
-                tbody.innerHTML = "";
-                snapshot.forEach(doc => {
-                    const mov = doc.data();
-                    const fechaTxt = mov.fecha ? mov.fecha.toDate().toLocaleString('es-AR') : "...";
-                    tbody.innerHTML += `
-                        <tr>
-                            <td><small>${fechaTxt}</small></td>
-                            <td><small>${mov.codigo}</small></td>
-                            <td>${mov.nombre}</td>
-                            <td style="color: ${mov.ajuste >= 0 ? 'green' : 'red'}"><b>${mov.ajuste >= 0 ? '+' : ''}${mov.ajuste}</b></td>
-                            <td>${mov.operador.split('@')[0]}</td>
-                        </tr>`;
-                });
-            });
-        }
-
-        window.exportarInventario = async () => {
-            const snap = await getDocs(collection(db, "stock"));
-            let csv = "Codigo,Materia,Precio,Stock Disponible\n";
-            snap.forEach(d => {
-                const i = d.data();
-                csv += `${d.id},${i.nombre},${i.precio},${i.cantidad}\n`;
-            });
-            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            link.href = URL.createObjectURL(blob);
-            link.setAttribute("download", `Inventario_${new Date().toLocaleDateString()}.csv`);
-            link.click();
-        };
-
-        window.borrarBaseCompleta = async () => {
-            if (!confirm("🚨 ATENCIÓN: ¿Está seguro de borrar TODO el inventario?")) return;
-            if (prompt("Escriba 'BORRAR TODO' para confirmar:") !== "BORRAR TODO") return;
-
-            try {
-                const snap = await getDocs(collection(db, "stock"));
-                const batch = writeBatch(db);
-                snap.forEach(d => batch.delete(d.ref));
-                await batch.commit();
-                alert("✨ Inventario reseteado.");
-            } catch (e) { alert("Error de permisos."); }
-        };
-    </script>
+    <script type="module" src="stock.js"></script>
 </body>
 </html>

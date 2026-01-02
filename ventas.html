@@ -8,65 +8,19 @@
     <style>
         .venta-layout { display: grid; grid-template-columns: 1fr 350px; gap: 25px; align-items: start; }
         .carrito-container { position: sticky; top: 20px; }
-        
-
         .item-carrito { display: flex; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; gap: 12px; }
         .btn-borrar { background: none; border: none; color: #ccc; cursor: pointer; font-size: 0.9rem; transition: color 0.3s; display: flex; align-items: center; padding: 0; width: 1.2rem; height: 1.2rem; }
         .btn-borrar:hover { color: var(--danger); }
         .item-info { flex-grow: 1; font-size: 0.85rem; }
-
-
         .category-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-        .cat-card {
-            border: 1px solid #ddd;
-            border-radius: 8px;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 0.85rem;
-            font-weight: 600;
-            background: #fff;
-            transition: all 0.2s;
-        }
-        .cat-card.selected {
-            border-color: var(--primary);
-            background: var(--primary);
-            color: white;
-            box-shadow: 0 4px 10px rgba(164, 21, 91, 0.2);
-        }
-
-
+        .cat-card { border: 1px solid #ddd; border-radius: 8px; padding: 12px; text-align: center; cursor: pointer; font-size: 0.85rem; font-weight: 600; background: #fff; transition: all 0.2s; }
+        .cat-card.selected { border-color: var(--primary); background: var(--primary); color: white; box-shadow: 0 4px 10px rgba(164, 21, 91, 0.2); }
         .payment-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 5px; }
-        .pay-card {
-            border: 1px solid #ddd;
-            border-radius: 6px;
-            padding: 8px;
-            text-align: center;
-            cursor: pointer;
-            font-size: 0.8rem;
-            font-weight: 600;
-            background: #fff;
-            transition: all 0.2s;
-            color: var(--gray);
-        }
+        .pay-card { border: 1px solid #ddd; border-radius: 6px; padding: 8px; text-align: center; cursor: pointer; font-size: 0.8rem; font-weight: 600; background: #fff; transition: all 0.2s; color: var(--gray); }
         .pay-card.selected { border-color: var(--primary); background: var(--primary); color: white; }
-
         .total-box { margin-top: 15px; padding-top: 15px; border-top: 2px solid var(--primary); font-weight: bold; font-size: 1.2rem; color: var(--primary); display: flex; justify-content: space-between; }
-        
-
-        .turno-info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 25px;
-        }
-        .info-box {
-            background: rgba(164, 21, 91, 0.03);
-            border: 1px solid rgba(164, 21, 91, 0.1);
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-        }
+        .turno-info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 25px; }
+        .info-box { background: rgba(164, 21, 91, 0.03); border: 1px solid rgba(164, 21, 91, 0.1); border-radius: 10px; padding: 12px; text-align: center; }
         .info-box small { color: var(--gray); text-transform: uppercase; font-size: 0.65rem; letter-spacing: 1px; display: block; margin-bottom: 4px; }
         .info-box span { font-weight: bold; color: var(--dark); font-size: 1.1rem; }
         .info-box h2 { border: none; padding: 0; margin: 0; font-size: 1.5rem; color: var(--primary); }
@@ -96,12 +50,8 @@
                         <div class="form-group">
                             <label>Categoría del Servicio:</label>
                             <div class="category-grid">
-                                <div class="cat-card selected" id="catCopia" onclick="seleccionarCat('Copia Rápida')">
-                                    COPIA RÁPIDA
-                                </div>
-                                <div class="cat-card" id="catStock" onclick="seleccionarCat('Stock')">
-                                    STOCK
-                                </div>
+                                <div class="cat-card selected" id="catCopia" data-cat="Copia Rápida">COPIA RÁPIDA</div>
+                                <div class="cat-card" id="catStock" data-cat="Stock">STOCK</div>
                             </div>
                         </div>
 
@@ -113,18 +63,12 @@
                         <div class="form-group">
                             <label>Método de Pago:</label>
                             <div class="payment-grid">
-                                <div class="pay-card selected" id="payEfectivo" onclick="seleccionarPago('Efectivo')">
-                                    EFECTIVO
-                                </div>
-                                <div class="pay-card" id="payTransf" onclick="seleccionarPago('Transferencia')">
-                                    TRANSFERENCIA
-                                </div>
+                                <div class="pay-card selected" id="payEfectivo" data-pago="Efectivo">EFECTIVO</div>
+                                <div class="pay-card" id="payTransf" data-pago="Transferencia">TRANSFERENCIA</div>
                             </div>
                         </div>
 
-                        <button type="button" id="btnAgregar" class="btn btn-accent" style="margin-top:15px">
-                            Añadir al Carrito
-                        </button>
+                        <button type="button" id="btnAgregar" class="btn btn-accent" style="margin-top:15px">Añadir al Carrito</button>
                     </form>
                 </div>
 
@@ -138,116 +82,13 @@
                             <span>Subtotal:</span>
                             <span id="totalVenta">$ 0.00</span>
                         </div>
-                        <button id="btnVender" class="btn btn-primary" style="background-color: var(--success); margin-top: 20px;" disabled>
-                            Confirmar Venta
-                        </button>
+                        <button id="btnVender" class="btn btn-primary" style="background-color: var(--success); margin-top: 20px;" disabled>Confirmar Venta</button>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { cargarSidebar } from './sidebar.js';
-        import { verificarAcceso, sanitizar, renderSeguro } from './security.js';
-
-        let nombreOperador = "";
-        let catActiva = "Copia Rápida";
-        let pagoActivo = "Efectivo";
-        let carrito = [];
-        let acumuladoLocal = 0;
-
-        verificarAcceso(['operario-fotocop', 'supervisor-fotocop', 'adm-eco', 'superusuario']).then(info => {
-            cargarSidebar('ventas');
-
-            nombreOperador = info.nombreReal || info.user.email.split('@')[0];
-            renderSeguro(document.getElementById('displayOperador'), nombreOperador);
-        });
-
-        window.seleccionarCat = (cat) => {
-            catActiva = cat;
-            document.getElementById('catCopia').classList.toggle('selected', cat === 'Copia Rápida');
-            document.getElementById('catStock').classList.toggle('selected', cat === 'Stock');
-        };
-
-        window.seleccionarPago = (pago) => {
-            pagoActivo = pago;
-            document.getElementById('payEfectivo').classList.toggle('selected', pago === 'Efectivo');
-            document.getElementById('payTransf').classList.toggle('selected', pago === 'Transferencia');
-        };
-
-        document.getElementById('btnAgregar').onclick = () => {
-            const monto = parseFloat(document.getElementById('inputMonto').value);
-            if (!monto || monto <= 0) return alert("Ingrese un monto válido");
-
-            carrito.push({ servicio: catActiva, monto: monto });
-            document.getElementById('inputMonto').value = "";
-            document.getElementById('inputMonto').focus();
-            renderizarCarrito();
-        };
-
-        window.eliminarItem = (index) => {
-            carrito.splice(index, 1);
-            renderizarCarrito();
-        };
-
-        function renderizarCarrito() {
-            const container = document.getElementById('itemsCarrito');
-            const totalLabel = document.getElementById('totalVenta');
-            container.innerHTML = "";
-            let total = 0;
-
-            if(carrito.length === 0) {
-                container.innerHTML = `<p style="color: var(--gray); font-style: italic; font-size: 0.8rem;">Carrito vacío</p>`;
-            }
-
-            carrito.forEach((item, index) => {
-                total += item.monto;
-                container.innerHTML += `
-                    <div class="item-carrito">
-                        <button class="btn-borrar" onclick="eliminarItem(${index})" title="Eliminar">🗑</button>
-                        <div class="item-info">
-                            <strong>${item.servicio}</strong>
-                        </div>
-                        <div style="font-weight: 600;">$ ${item.monto.toFixed(2)}</div>
-                    </div>`;
-            });
-
-            totalLabel.innerText = `$ ${total.toFixed(2)}`;
-            document.getElementById('btnVender').disabled = carrito.length === 0;
-        }
-
-        document.getElementById('btnVender').onclick = async () => {
-            const btn = document.getElementById('btnVender');
-            btn.disabled = true;
-            btn.innerText = "⏳ Guardando...";
-
-            const totalVenta = carrito.reduce((acc, i) => acc + i.monto, 0);
-
-            const ventaFinal = {
-                items: carrito,
-                total: totalVenta,
-                metodoPago: pagoActivo,
-                operador: nombreOperador, 
-                sector: "Fotocopiadora",
-                fecha: new Date().toISOString().split('T')[0],
-                timestamp: serverTimestamp()
-            };
-
-            try {
-                await addDoc(collection(db, "ventas"), ventaFinal);
-                acumuladoLocal += totalVenta;
-                document.getElementById('totalTurno').innerText = `$ ${acumuladoLocal.toFixed(2)}`;
-                alert("✅ Registrado con éxito");
-                carrito = [];
-                renderizarCarrito();
-            } catch (error) {
-                alert("Error de conexión");
-                btn.disabled = false;
-            }
-        };
-    </script>
+    <script type="module" src="ventas.js"></script>
 </body>
 </html>

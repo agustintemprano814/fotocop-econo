@@ -7,7 +7,6 @@
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
         .editor-container { max-width: 950px; margin: 0 auto; }
-        
         .search-box {
             background: #f8fafc;
             padding: 20px;
@@ -19,7 +18,6 @@
             gap: 15px;
             align-items: end;
         }
-
         .results-list {
             max-height: 250px;
             overflow-y: auto;
@@ -38,7 +36,6 @@
             transition: 0.2s;
         }
         .result-item:hover { background: #f0f9ff; }
-
         .edit-form-card {
             display: none;
             background: white;
@@ -48,7 +45,6 @@
             border-top: 5px solid var(--accent);
             animation: slideUp 0.4s ease-out;
         }
-        
         .field-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -60,8 +56,6 @@
         .field-row label { font-size: 0.7rem; font-weight: bold; color: var(--gray); text-transform: uppercase; }
         .audit-tag { font-size: 0.7rem; color: #94a3b8; margin-top: 20px; font-style: italic; }
         @keyframes slideUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-
         .id-input { border: 2px solid #cbd5e1 !important; background: #fffbeb !important; }
     </style>
 </head>
@@ -95,7 +89,7 @@
                     <label>Operador:</label>
                     <input type="text" id="filterEmail" placeholder="Email...">
                 </div>
-                <button class="btn btn-primary" onclick="ejecutarBusqueda()">🔍 Buscar</button>
+                <button id="btnBuscar" class="btn btn-primary">🔍 Buscar</button>
             </div>
 
             <div id="resultsList" class="results-list"></div>
@@ -111,7 +105,7 @@
                     <div id="camposContenedor"></div>
                     <div class="audit-tag" id="auditMsg"></div>
                     <div style="display:flex; gap:10px; margin-top:20px">
-                        <button type="button" class="btn" style="background:var(--gray)" onclick="cancelarEdicion()">Cancelar</button>
+                        <button type="button" id="btnCancelar" class="btn" style="background:var(--gray)">Cancelar</button>
                         <button type="submit" class="btn btn-accent">💾 Aplicar Correcciones</button>
                     </div>
                 </form>
@@ -119,133 +113,6 @@
         </div>
     </main>
 
-    <script type="module">
-        import { db, auth } from './firebase-config.js';
-        import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { verificarAcceso } from './security.js';
-        import { cargarSidebar } from './sidebar.js';
-
-        let registroActual = null;
-        let infoUsuario = null;
-
-        document.getElementById('filterFecha').value = new Date().toISOString().split('T')[0];
-
-        verificarAcceso(['supervisor-fotocop', 'adm-eco', 'superusuario']).then(info => {
-            infoUsuario = info;
-            cargarSidebar('editor');
-        });
-
-        window.ejecutarBusqueda = async () => {
-            const col = document.getElementById('selectColeccion').value;
-            const idDirecto = document.getElementById('inputID').value.trim();
-            const resultsDiv = document.getElementById('resultsList');
-            
-            document.getElementById('editCard').style.display = 'none';
-            resultsDiv.innerHTML = "";
-            resultsDiv.style.display = 'none';
-
-
-            if(idDirecto) {
-                try {
-                    const snap = await getDoc(doc(db, col, idDirecto));
-                    if(snap.exists()) {
-                        cargarParaEditar(snap.id, snap.data(), col);
-                    } else {
-                        alert("ID no encontrado en esta colección.");
-                    }
-                } catch (e) { alert("Error buscando ID directo."); }
-                return;
-            }
-
-
-            const fecha = document.getElementById('filterFecha').value;
-            const email = document.getElementById('filterEmail').value.trim().toLowerCase();
-            
-            resultsDiv.innerHTML = "<p style='padding:15px'>🔍 Buscando en base de datos...</p>";
-            resultsDiv.style.display = 'block';
-
-            try {
-                let q = query(collection(db, col), where("fecha", "==", fecha));
-                const snap = await getDocs(q);
-                resultsDiv.innerHTML = "";
-
-                if(snap.empty) {
-                    resultsDiv.innerHTML = "<p style='padding:15px'>❌ Sin resultados para esta fecha.</p>";
-                    return;
-                }
-
-                snap.forEach(d => {
-                    const data = d.data();
-                    const matchEmail = !email || (data.operador && data.operador.includes(email)) || (data.supervisor && data.supervisor.includes(email)) || (data.nombreOperador && data.nombreOperador.toLowerCase().includes(email));
-                    
-                    if(matchEmail) {
-                        const item = document.createElement('div');
-                        item.className = 'result-item';
-                        let desc = data.total ? `Total: $${data.total}` : (data.rendidoEfectivo ? `Rendido: $${data.rendidoEfectivo}` : 'Ver Campos');
-                        let user = data.operador || data.supervisor || data.nombreOperador || 'Sistema';
-
-                        item.innerHTML = `<span><strong>${user}</strong> | ${desc}</span><span style="color:var(--primary)">Seleccionar ➔</span>`;
-                        item.onclick = () => cargarParaEditar(d.id, data, col);
-                        resultsDiv.appendChild(item);
-                    }
-                });
-
-                if(!resultsDiv.hasChildNodes()) resultsDiv.innerHTML = "<p style='padding:15px'>❌ No se encontró el operador buscado.</p>";
-
-            } catch (e) { alert("Error en filtros."); }
-        };
-
-        function cargarParaEditar(id, data, col) {
-
-            if(infoUsuario.rol === 'supervisor-fotocop' && data.sector === 'Apuntes') {
-                return alert("⛔ Acceso Denegado: Su rol solo permite editar Fotocopiadora.");
-            }
-
-            registroActual = { id, col, data };
-            const container = document.getElementById('camposContenedor');
-            container.innerHTML = "";
-            
-            document.getElementById('badgeID').innerText = `DOCUMENT_ID: ${id}`;
-            document.getElementById('editCard').style.display = 'block';
-            document.getElementById('resultsList').style.display = 'none';
-
-            const modInfo = data.ultimaModificacionPor ? `Editado por: ${data.ultimaModificacionPor}` : "Registro original.";
-            document.getElementById('auditMsg').innerText = `ℹ️ ${modInfo} - Al guardar se registrará tu firma digital.`;
-
-
-            for(let key in data) {
-                if(typeof data[key] !== 'object' && !['fecha','timestamp','fechaString','ultimaModificacionPor','fechaModificacion'].includes(key)) {
-                    container.innerHTML += `
-                        <div class="field-row">
-                            <label>${key.replace(/([A-Z])/g, ' $1')}</label>
-                            <input type="text" name="${key}" value="${data[key]}" class="m-input">
-                        </div>
-                    `;
-                }
-            }
-        }
-
-        document.getElementById('formDinamico').onsubmit = async (e) => {
-            e.preventDefault();
-            if(!confirm("¿Confirmar edición? Se sobrescribirán los datos originales.")) return;
-
-            const formData = new FormData(e.target);
-            const updates = {};
-            formData.forEach((value, key) => {
-                updates[key] = (isNaN(value) || value === "") ? value : Number(value);
-            });
-
-            updates.ultimaModificacionPor = auth.currentUser.email;
-            updates.fechaModificacion = new Date().toISOString();
-
-            try {
-                await updateDoc(doc(db, registroActual.col, registroActual.id), updates);
-                alert("✨ Registro corregido satisfactoriamente.");
-                location.reload();
-            } catch (e) { alert("Error de escritura."); }
-        };
-
-        window.cancelarEdicion = () => { location.reload(); };
-    </script>
+    <script type="module" src="editor.js"></script>
 </body>
 </html>

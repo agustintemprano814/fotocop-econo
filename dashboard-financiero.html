@@ -7,56 +7,16 @@
     <link rel="stylesheet" href="style.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
-        .dashboard-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-            gap: 20px;
-            margin-bottom: 30px;
-        }
-        .kpi-card {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            border-bottom: 4px solid var(--primary);
-            text-align: center;
-        }
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .kpi-card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); border-bottom: 4px solid var(--primary); text-align: center; }
         .kpi-card span { font-size: 0.85rem; color: var(--gray); font-weight: bold; text-transform: uppercase; }
         .kpi-card h2 { margin: 10px 0 0 0; font-size: 1.8rem; color: var(--secondary); border: none; padding: 0; }
-        
-        .charts-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .chart-box {
-            background: white;
-            padding: 20px;
-            border-radius: 15px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
-            display: flex;
-            flex-direction: column;
-            height: 380px; 
-        }
-
+        .charts-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 20px; margin-bottom: 20px; }
+        .chart-box { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); display: flex; flex-direction: column; height: 380px; }
         .canvas-wrapper { position: relative; flex-grow: 1; width: 100%; min-height: 0; }
-
-        .filter-bar {
-            background: #f8fafc;
-            padding: 20px;
-            border-radius: 12px;
-            display: flex;
-            flex-wrap: wrap;
-            gap: 15px;
-            margin-bottom: 25px;
-            align-items: flex-end;
-            border: 1px solid #e2e8f0;
-        }
+        .filter-bar { background: #f8fafc; padding: 20px; border-radius: 12px; display: flex; flex-wrap: wrap; gap: 15px; margin-bottom: 25px; align-items: flex-end; border: 1px solid #e2e8f0; }
         .filter-group { display: flex; flex-direction: column; gap: 5px; }
         .filter-group input, .filter-group select { width: 180px; padding: 8px; border-radius: 6px; border: 1px solid #ccc; }
-
         @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
     </style>
 </head>
@@ -111,159 +71,6 @@
         </div>
     </main>
 
-    <script type="module">
-        import { db } from './firebase-config.js';
-        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { verificarAcceso } from './security.js';
-        import { cargarSidebar } from './sidebar.js';
-
-        let chartEvolucion, chartPagos;
-
-
-        const hoy = new Date();
-        document.getElementById('fechaHasta').value = hoy.toISOString().split('T')[0];
-        const inicioMes = new Date(hoy.getFullYear(), hoy.getMonth(), 1);
-        document.getElementById('fechaDesde').value = inicioMes.toISOString().split('T')[0];
-
-
-        verificarAcceso(['administrador', 'superusuario', 'adm-eco']).then(() => {
-            cargarSidebar('reportes'); 
-            cargarDashboard(); 
-        });
-
-
-        async function cargarDashboard() {
-            const desde = document.getElementById('fechaDesde').value;
-            const hasta = document.getElementById('fechaHasta').value;
-            const sector = document.getElementById('filtroSector').value;
-
-            if (!desde || !hasta) return;
-
-            try {
-
-                const qVentas = query(
-                    collection(db, "ventas"), 
-                    where("fecha", ">=", desde), 
-                    where("fecha", "<=", hasta)
-                );
-                const snapVentas = await getDocs(qVentas);
-
-
-                const qCierres = query(
-                    collection(db, "cierres_diarios"), 
-                    where("fechaString", ">=", desde), 
-                    where("fechaString", "<=", hasta)
-                );
-                const snapCierres = await getDocs(qCierres);
-
-                console.log(`Auditoría: ${snapVentas.size} tickets encontrados.`);
-                procesarDatos(snapVentas, snapCierres, sector);
-            } catch (err) {
-                console.error("Error en Dashboard:", err);
-                alert("Error al conectar con la base de datos.");
-            }
-        }
-
-
-        function procesarDatos(snapVentas, snapCierres, sectorFiltro) {
-            let recaudacion = 0;
-            let gastos = 0;
-            let diferencia = 0;
-            let efectivo = 0;
-            let transferencia = 0;
-            const ventasPorDia = {};
-
-
-            snapVentas.forEach(doc => {
-                const data = doc.data();
-                if (sectorFiltro !== 'todos' && data.sector !== sectorFiltro) return;
-
-                const total = Number(data.total) || 0;
-                recaudacion += total;
-
-                if (data.metodoPago === 'efectivo') efectivo += total;
-                else transferencia += total;
-
-
-                ventasPorDia[data.fecha] = (ventasPorDia[data.fecha] || 0) + total;
-            });
-
-
-            snapCierres.forEach(doc => {
-                const data = doc.data();
-                if (sectorFiltro !== 'todos' && data.sector !== sectorFiltro) return;
-
-
-                const g = data.caja?.gastos || data.gastos || 0;
-                gastos += Number(g);
-
-
-                const d = data.caja?.diferencia || data.diferencia || 0;
-                diferencia += Number(d);
-            });
-
- 
-            document.getElementById('kpiRecaudacion').innerText = `$ ${recaudacion.toFixed(2)}`;
-            document.getElementById('kpiGastos').innerText = `$ ${gastos.toFixed(2)}`;
-            document.getElementById('kpiNeto').innerText = `$ ${(recaudacion - gastos).toFixed(2)}`;
-            
-            const elDif = document.getElementById('kpiDiferencia');
-            elDif.innerText = `$ ${diferencia.toFixed(2)}`;
-            elDif.style.color = diferencia < 0 ? "var(--danger)" : "var(--success)";
-
-            renderizarGraficos(ventasPorDia, efectivo, transferencia);
-        }
-
-
-        function renderizarGraficos(ventasPorDia, efectivo, transferencia) {
-            if (chartEvolucion) chartEvolucion.destroy();
-            if (chartPagos) chartPagos.destroy();
-
-            const labels = Object.keys(ventasPorDia).sort();
-            const values = labels.map(l => ventasPorDia[l]);
-
-
-            chartEvolucion = new Chart(document.getElementById('chartEvolucion'), {
-                type: 'line',
-                data: {
-                    labels,
-                    datasets: [{
-                        label: 'Ventas Diarias ($)',
-                        data: values,
-                        borderColor: '#a4155b',
-                        backgroundColor: 'rgba(164, 21, 91, 0.1)',
-                        fill: true,
-                        tension: 0.4
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } }
-                }
-            });
-
-
-            chartPagos = new Chart(document.getElementById('chartPagos'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Efectivo', 'Transf.'],
-                    datasets: [{
-                        data: [efectivo, transferencia],
-                        backgroundColor: ['#28a745', '#3b82f6'],
-                        borderWidth: 0
-                    }]
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: false,
-                    plugins: { legend: { position: 'bottom' } }
-                }
-            });
-        }
-
-
-        document.getElementById('btnFiltrar').onclick = cargarDashboard;
-    </script>
+    <script type="module" src="dashboard-financiero.js"></script>
 </body>
 </html>

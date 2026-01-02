@@ -8,67 +8,42 @@
     <link rel="icon" type="image/jpg" href="https://linktr.ee/og/image/franjaeconounlp.jpg">
     <style>
         :root { --bg-caja: #f0fff4; --bg-hojas: #fff5f5; }
-
-        .operator-card {
-            background: #f8f9fa; border-radius: 12px; padding: 15px;
-            margin-bottom: 25px; border-left: 5px solid var(--accent);
-            display: flex; align-items: center; gap: 15px;
-        }
-        .operator-avatar {
-            width: 45px; height: 45px; background: var(--primary);
-            color: white; border-radius: 50%; display: flex;
-            justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem;
-        }
-
-
-        .section-header-cierre {
-            background: var(--primary); color: white; padding: 12px 20px;
-            border-radius: 8px; margin: 15px 0 5px 0; font-weight: bold;
-            font-size: 1rem; display: flex; align-items: center; justify-content: space-between;
-            cursor: pointer; transition: 0.3s;
-        }
-        .section-content {
-            max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out;
-            padding: 0 5px;
-        }
+        .operator-card { background: #f8f9fa; border-radius: 12px; padding: 15px; margin-bottom: 25px; border-left: 5px solid var(--accent); display: flex; align-items: center; gap: 15px; }
+        .operator-avatar { width: 45px; height: 45px; background: var(--primary); color: white; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 1.2rem; }
+        .section-header-cierre { background: var(--primary); color: white; padding: 12px 20px; border-radius: 8px; margin: 15px 0 5px 0; font-weight: bold; font-size: 1rem; display: flex; align-items: center; justify-content: space-between; cursor: pointer; transition: 0.3s; }
+        .section-content { max-height: 0; overflow: hidden; transition: max-height 0.5s ease-out; padding: 0 5px; }
         .section-content.active { max-height: 2000px; padding: 15px 5px; }
-
-        .grid-maquinas {
-            display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 12px;
-        }
-
-        .maquina-card {
-            background: white; border: 1px solid #e2e8f0;
-            border-radius: 10px; padding: 10px; position: relative;
-        }
+        .grid-maquinas { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+        .maquina-card { background: white; border: 1px solid #e2e8f0; border-radius: 10px; padding: 10px; position: relative; }
         .maquina-card h4 { margin: 0 0 5px 0; color: var(--secondary); font-size: 0.7rem; text-transform: uppercase; }
-        
-        .neto-badge {
-            background: var(--primary); color: white;
-            font-size: 0.6rem; font-weight: 800; padding: 1px 5px; border-radius: 4px;
-            display: inline-block; margin-top: 5px;
-        }
-
-        .total-box-resaltado {
-            margin-top: 15px; padding: 15px 20px; border-radius: 10px;
-            display: flex; justify-content: space-between; align-items: center;
-            font-weight: 800; font-size: 1.1rem;
-        }
+        .neto-badge { background: var(--primary); color: white; font-size: 0.6rem; font-weight: 800; padding: 1px 5px; border-radius: 4px; display: inline-block; margin-top: 5px; }
+        .total-box-resaltado { margin-top: 15px; padding: 15px 20px; border-radius: 10px; display: flex; justify-content: space-between; align-items: center; font-weight: 800; font-size: 1.1rem; }
         .total-caja { background: var(--bg-caja); border: 1px solid #c6f6d5; color: #276749; }
         .total-hojas { background: var(--bg-hojas); border: 1px solid #fed7d7; color: #9b2c2c; }
-
-        .pin-overlay {
-            position: fixed; top:0; left:0; width:100%; height:100%;
-            background: rgba(0,0,0,0.8); display:none; justify-content:center;
-            align-items:center; z-index:2000; backdrop-filter: blur(5px);
+        .pin-overlay { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); display:none; justify-content:center; align-items:center; z-index:2000; backdrop-filter: blur(5px); }
+        .btn-next { background: var(--dark); color: white; border: none; padding: 10px 20px; border-radius: 6px; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold; }
+        /* Estilo para que el botón tenga un tamaño normal y profesional */
+        .btn-imprimir-mini {
+            background-color: var(--dark);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            cursor: pointer;
+            width: auto;           /* Crucial: evita que ocupe todo el ancho */
+            display: inline-flex;  /* Alinea el emoji y el texto */
+            align-items: center;
+            gap: 8px;
+            transition: background 0.3s;
         }
 
-        .btn-next {
-            background: var(--dark); color: white; border: none; padding: 10px 20px;
-            border-radius: 6px; cursor: pointer; margin-top: 15px; width: 100%; font-weight: bold;
+        .btn-imprimir-mini:hover {
+            background-color: var(--primary);
         }
 
+        /* El bloque que ya tenías se mantiene abajo para ocultarlo al imprimir */
         @media print { .sidebar, .btn-save-cierre, .btn-imprimir-mini, .operator-card, .btn-next { display: none !important; } }
     </style>
 </head>
@@ -77,13 +52,13 @@
 
     <main class="main-content">
         <div class="container">
-            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
-                <div>
-                    <h2 style="border:none; margin:0;">Cierre de Jornada</h2>
-                    <p id="fechaActual" style="color:var(--primary); font-weight:bold; font-size:0.9rem;"></p>
-                </div>
-                <button type="button" class="btn-imprimir-mini" onclick="window.print()">🖨️ Imprimir</button>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
+            <div>
+                <h2 style="border:none; margin:0;">Cierre de Jornada</h2>
+                <p id="fechaActual" style="color:var(--primary); font-weight:bold; font-size:0.9rem;"></p>
             </div>
+            <button type="button" class="btn-imprimir-mini" id="btnImprimir">🖨️ Imprimir</button>
+        </div>
 
             <div class="operator-card">
                 <div class="operator-avatar" id="user-initial">?</div>
@@ -95,7 +70,7 @@
 
             <div class="kpi-grid">
                 <div class="kpi-card">
-                    <span class="kpi-title">Hojas del Día (Neto/2)</span>
+                    <span class="kpi-title">Hojas del Día</span>
                     <p class="kpi-value" id="kpi-hojas-total">0</p>
                 </div>
                 <div class="kpi-card">
@@ -113,18 +88,18 @@
             </div>
 
             <form id="formCierreCompleto">
-                <div class="section-header-cierre" onclick="toggleSeccion('sec-contadores')">
+                <div class="section-header-cierre" data-target="sec-contadores">
                     <span>🔢 1. Contadores de Máquinas</span>
-                    <span id="icon-sec-contadores">🔽</span>
+                    <span class="section-icon">🔽</span>
                 </div>
                 <div id="sec-contadores" class="section-content active">
                     <div class="grid-maquinas" id="contenedorMaquinas"></div>
-                    <button type="button" class="btn-next" onclick="irASeccion('sec-caja')">Siguiente: Ingresos y Gastos ➔</button>
+                    <button type="button" class="btn-next" data-next="sec-caja">Siguiente: Ingresos y Gastos ➔</button>
                 </div>
 
-                <div class="section-header-cierre" onclick="toggleSeccion('sec-caja')">
+                <div class="section-header-cierre" data-target="sec-caja">
                     <span>💰 2. Ingresos y Gastos de Caja</span>
-                    <span id="icon-sec-caja">🔽</span>
+                    <span class="section-icon">🔽</span>
                 </div>
                 <div id="sec-caja" class="section-content">
                     <div class="grid-maquinas">
@@ -148,12 +123,12 @@
                         <span>Total Rendido:</span>
                         <span id="totalCajaNeto">$ 0</span>
                     </div>
-                    <button type="button" class="btn-next" onclick="irASeccion('sec-nc')">Siguiente: No Cobradas ➔</button>
+                    <button type="button" class="btn-next" data-next="sec-nc">Siguiente: No Cobradas ➔</button>
                 </div>
 
-                <div class="section-header-cierre" onclick="toggleSeccion('sec-nc')">
+                <div class="section-header-cierre" data-target="sec-nc">
                     <span>📄 3. Copias No Cobradas</span>
-                    <span id="icon-sec-nc">🔽</span>
+                    <span class="section-icon">🔽</span>
                 </div>
                 <div id="sec-nc" class="section-content">
                     <div class="grid-maquinas">
@@ -178,161 +153,24 @@
                         <span>Total No Cobradas (Hojas):</span>
                         <span id="totalNC">0</span>
                     </div>
-                    <button type="submit" class="btn-save-cierre" style="background:var(--success); margin-top:20px;">💾 FINALIZAR Y GUARDAR TODO</button>
+                    <button type="submit" class="btn-save-cierre" id="btnFinalizarCierre" style="background:var(--success); margin-top:20px; width: 100%; border:none; color:white; padding:15px; border-radius:8px; font-weight:bold; cursor:pointer;">💾 FINALIZAR Y GUARDAR TODO</button>
                 </div>
             </form>
         </div>
     </main>
 
     <div id="pinOverlay" class="pin-overlay">
-        <div class="card" style="width:320px; text-align:center;">
+        <div class="card" style="width:320px; text-align:center; background:white; padding:25px; border-radius:15px;">
             <h3>Firma de Supervisor</h3>
             <p style="font-size:0.8rem; color:var(--gray)">PIN para validar el cierre.</p>
-            <input type="password" id="pinInput" maxlength="4" style="text-align:center; font-size:2rem; letter-spacing:10px; margin:20px 0; width:80%">
+            <input type="password" id="pinInput" maxlength="4" style="text-align:center; font-size:2rem; letter-spacing:10px; margin:20px 0; width:80%; border:1px solid #ddd; border-radius:8px;">
             <div style="display:flex; gap:10px">
-                <button type="button" class="btn" style="background:var(--gray)" onclick="cerrarPin()">Cancelar</button>
-                <button type="button" class="btn" onclick="confirmarCierreFinal()">Confirmar</button>
+                <button type="button" class="btn" id="btnCancelarPin" style="background:var(--gray); flex:1; border:none; color:white; padding:10px; border-radius:8px;">Cancelar</button>
+                <button type="button" class="btn" id="btnConfirmarFinal" style="background:var(--primary); flex:1; border:none; color:white; padding:10px; border-radius:8px;">Confirmar</button>
             </div>
         </div>
     </div>
 
-    <script type="module">
-        import { auth, db } from './firebase-config.js';
-        import { collection, addDoc, serverTimestamp, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { verificarAcceso } from './security.js';
-        import { cargarSidebar } from './sidebar.js';
-
-        let sistemaEfectivo = 0;
-        let sistemaTransf = 0;
-
-
-        verificarAcceso(['supervisor-fotocop', 'superusuario', 'adm-eco']).then(info => {
-            cargarSidebar('cierre-foto');
-            document.getElementById('displayUser').innerText = info.nombreReal;
-            document.getElementById('user-initial').innerText = info.nombreReal.charAt(0).toUpperCase();
-            generarContadores();
-            cargarVentasSistema();
-        });
-
-        document.getElementById('fechaActual').innerText = new Date().toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'long', year:'numeric'});
-
-        function generarContadores() {
-            const cont = document.getElementById('contenedorMaquinas');
-            for(let i=1; i<=7; i++) {
-                cont.innerHTML += `
-                <div class="maquina-card">
-                    <h4>Máquina ${i}</h4>
-                    <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px">
-                        <div class="input-group-cierre"><label style="font-size:0.6rem">Inicio</label><input type="number" class="m-input" id="m${i}_i" value=""></div>
-                        <div class="input-group-cierre"><label style="font-size:0.6rem">Cierre</label><input type="number" class="m-input" id="m${i}_c" value=""></div>
-                    </div>
-                    <div id="neto_m${i}" class="neto-badge">Neto: 0</div>
-                </div>`;
-            }
-        }
-
-        window.toggleSeccion = (id) => {
-            const el = document.getElementById(id);
-            const isActive = el.classList.contains('active');
-            // document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
-            if(!isActive) el.classList.add('active');
-            else el.classList.remove('active');
-        };
-
-        window.irASeccion = (proximaId) => {
-            document.querySelectorAll('.section-content').forEach(s => s.classList.remove('active'));
-            document.getElementById(proximaId).classList.add('active');
-            window.scrollTo({ top: document.getElementById(proximaId).offsetTop - 100, behavior: 'smooth' });
-        };
-
-  
-        async function cargarVentasSistema() {
-            const hoy = new Date().toISOString().split('T')[0];
-            const q = query(collection(db, "ventas"), where("fecha", "==", hoy), where("sector", "==", "Fotocopiadora"));
-            const snap = await getDocs(q);
-            sistemaEfectivo = 0; sistemaTransf = 0;
-            snap.forEach(d => {
-                if(d.data().metodoPago === 'efectivo') sistemaEfectivo += d.data().total;
-                else sistemaTransf += d.data().total;
-            });
-            document.getElementById('kpi-sistema-efectivo').innerText = `$ ${sistemaEfectivo.toFixed(2)}`;
-            document.getElementById('kpi-sistema-transf').innerText = `$ ${sistemaTransf.toFixed(2)}`;
-        }
-
-
-        document.addEventListener('input', () => {
-            let totalNetoMaquinas = 0;
-            for(let i=1; i<=7; i++){
-                const ini = Number(document.getElementById(`m${i}_i`).value);
-                const fin = Number(document.getElementById(`m${i}_c`).value);
-                const neto = (fin > 0 && fin >= ini) ? (fin - ini) : 0;
-                document.getElementById(`neto_m${i}`).innerText = `Neto: ${neto}`;
-                totalNetoMaquinas += neto;
-            }
-            document.getElementById('kpi-hojas-total').innerText = Math.floor(totalNetoMaquinas / 2);
-
-            const e = Number(document.getElementById('ingEfectivo').value);
-            const t = Number(document.getElementById('ingTransf').value);
-            const g = Number(document.getElementById('gastosDia').value);
-            const s = Number(document.getElementById('vtaStock').value);
-            const r = Number(document.getElementById('vtaRapida').value);
-            
-            document.getElementById('subtotalVentasDirectas').innerText = `$ ${s + r}`;
-            document.getElementById('totalCajaNeto').innerText = `$ ${(e + t - g).toFixed(2)}`;
-
-            const diferencia = (e + t) - (sistemaEfectivo + sistemaTransf + s + r);
-            const kpiConciliacion = document.getElementById('kpi-conciliacion-final');
-            kpiConciliacion.innerText = `$ ${diferencia.toFixed(2)}`;
-            kpiConciliacion.style.color = Math.abs(diferencia) < 1 ? "var(--success)" : (diferencia > 0 ? "var(--primary)" : "var(--danger)");
-
-            let tNC = 0;
-            document.querySelectorAll('.nc').forEach(i => tNC += Number(i.value));
-            document.getElementById('totalNC').innerText = tNC;
-        });
-
-
-        const overlay = document.getElementById('pinOverlay');
-        document.getElementById('formCierreCompleto').onsubmit = (e) => { e.preventDefault(); overlay.style.display = 'flex'; };
-        window.cerrarPin = () => { overlay.style.display = 'none'; };
-
-        window.confirmarCierreFinal = async () => {
-            const pin = document.getElementById('pinInput').value;
-            if(pin !== "1234") { alert("PIN Incorrecto"); return; }
-            
-            overlay.style.display = 'none';
-            const btn = document.querySelector('.btn-save-cierre');
-            btn.disabled = true; btn.innerText = "⏳ Procesando...";
-
-            try {
-                const maquinas = {};
-                for(let i=1; i<=7; i++) {
-                    maquinas[`m${i}`] = { 
-                        inicio: Number(document.getElementById(`m${i}_i`).value), 
-                        cierre: Number(document.getElementById(`m${i}_c`).value),
-                        neto: Number(document.getElementById(`m${i}_c`).value) - Number(document.getElementById(`m${i}_i`).value)
-                    };
-                }
-
-                await addDoc(collection(db, "cierres_diarios"), {
-                    sector: 'Fotocopiadora',
-                    supervisor: auth.currentUser.email,
-                    nombreSupervisor: document.getElementById('displayUser').innerText,
-                    fecha: serverTimestamp(),
-                    maquinas,
-                    caja: { 
-                        efectivoRendido: Number(document.getElementById('ingEfectivo').value), 
-                        transferenciaRendida: Number(document.getElementById('ingTransf').value), 
-                        gastos: Number(document.getElementById('gastosDia').value),
-                        diferencia: Number(document.getElementById('kpi-conciliacion-final').innerText.replace('$ ',''))
-                    },
-                    totalNoCobradas: Number(document.getElementById('totalNC').innerText),
-                    estado: 'Finalizado'
-                });
-
-                alert("✅ Cierre guardado con éxito.");
-                window.location.href = "inicio.html";
-            } catch (err) { alert("Error: " + err.message); btn.disabled = false; }
-        };
-    </script>
+    <script type="module" src="cierres.js"></script>
 </body>
 </html>
