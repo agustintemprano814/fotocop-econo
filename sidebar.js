@@ -1,3 +1,7 @@
+/**
+ * @file sidebar.js
+ * @description Generador dinámico de barra lateral compatible con CSP y RBAC.
+ */
 import { auth, db } from './firebase-config.js';
 import './auth-timeout.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
@@ -18,7 +22,6 @@ export function cargarSidebar(paginaActiva) {
         getDoc(doc(db, "usuarios", user.email))
             .then((docSnap) => {
                 const rol = docSnap.exists() ? docSnap.data().rol : "restringido";
-
 
                 const secciones = [
                     {
@@ -78,7 +81,6 @@ export function cargarSidebar(paginaActiva) {
                     <div class="menu-scroll-container">`;
 
                 secciones.forEach(seccion => {
-
                     const itemsVisibles = seccion.items.filter(item => item.roles.includes(rol));
                     
                     if (itemsVisibles.length > 0) {
@@ -86,8 +88,9 @@ export function cargarSidebar(paginaActiva) {
                         
                         itemsVisibles.forEach(item => {
                             const activeClass = item.id === paginaActiva ? 'active' : '';
+                           
                             htmlFinal += `
-                                <div class="sidebar-item ${activeClass}" onclick="window.location.href='${item.url}'">
+                                <div class="sidebar-item ${activeClass}" data-url="${item.url}">
                                     <span class="item-icon">${item.icon}</span> 
                                     <span class="item-label">${item.label}</span>
                                 </div>`;
@@ -105,11 +108,22 @@ export function cargarSidebar(paginaActiva) {
 
                 sidebarContainer.innerHTML = htmlFinal;
 
+                const itemsMenu = sidebarContainer.querySelectorAll('.sidebar-item[data-url]');
+                itemsMenu.forEach(item => {
+                    item.addEventListener('click', () => {
+                        const destino = item.getAttribute('data-url');
+                        if (destino) window.location.href = destino;
+                    });
+                });
+
+
                 const btnSalir = document.getElementById('btnSalir');
                 if (btnSalir) {
-                    btnSalir.onclick = () => {
-                        signOut(auth).then(() => { window.location.href = "index.html"; });
-                    };
+                    btnSalir.addEventListener('click', () => {
+                        if(confirm("¿Desea cerrar sesión?")) {
+                            signOut(auth).then(() => { window.location.href = "index.html"; });
+                        }
+                    });
                 }
             })
             .catch((error) => {
