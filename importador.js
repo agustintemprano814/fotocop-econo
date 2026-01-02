@@ -1,6 +1,6 @@
 /**
  * @file importador.js
- * @description Lógica de procesamiento masivo de Excel con seguridad CSP y auditoría.
+ * @description Lógica de procesamiento masivo de Excel con seguridad CSP, auditoría y descarga de plantillas.
  */
 import { db, auth } from './firebase-config.js';
 import { collection, doc, writeBatch, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -15,6 +15,8 @@ const btnLimpiar = document.getElementById('btnLimpiarBD');
 const statusCard = document.getElementById('statusCard');
 const progressBar = document.getElementById('progressBar');
 const statusText = document.getElementById('statusText');
+const btnDescargarPlantilla = document.getElementById('btnDescargarPlantilla');
+const btnDescargarManual = document.getElementById('btnDescargarManual');
 
 // --- SEGURIDAD Y ACCESO ---
 verificarAcceso(['superusuario']).then(() => {
@@ -26,7 +28,7 @@ verificarAcceso(['superusuario']).then(() => {
 });
 
 function inicializarManejadores() {
-    // 1. Manejo de Drag & Drop
+    // 1. Manejo de Drag & Drop y Carga de Archivos
     dropZone.addEventListener('click', () => fileInput.click());
     
     dropZone.addEventListener('dragover', (e) => {
@@ -48,11 +50,50 @@ function inicializarManejadores() {
         if (file) procesarExcel(file);
     });
 
-    // 2. Botón de Limpieza
+    // 2. Botón de Limpieza de Base de Datos
     btnLimpiar.addEventListener('click', limpiarBaseDeDatos);
+
+    // 3. Botones de Recursos para Administradores (NUEVOS)
+    btnDescargarPlantilla.addEventListener('click', generarPlantillaExcel);
+    btnDescargarManual.addEventListener('click', mostrarManual);
+}
+
+// --- RECURSOS PARA ADMINISTRADORES ---
+
+/**
+ * Genera una plantilla Excel dinámica basada en la estructura requerida por el sistema.
+ */
+function generarPlantillaExcel() {
+    const encabezados = [
+        ["Fecha", "M1 Inicio", "M1 Cierre", "M2 Inicio", "M2 Cierre", "M3 Inicio", "M3 Cierre", "M4 Inicio", "M4 Cierre", "M5 Inicio", "M5 Cierre", "M6 Inicio", "M6 Cierre", "M7 Inicio", "M7 Cierre", "CECE", "Stock Apuntes", "Beca Apuntes", "Internas", "Originales", "Descartes", "Descartes Tec."]
+    ];
+    
+    // Fila de ejemplo con datos ficticios para guiar al usuario
+    const ejemplo = [
+        ["2026-01-01", 1000, 1150, 500, 620, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 50, 10, 5, 2, 1, 3, 0]
+    ];
+
+    const dataFinal = encabezados.concat(ejemplo);
+    const ws = XLSX.utils.aoa_to_sheet(dataFinal);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Estandar");
+
+    // Descargar el archivo XLSX
+    XLSX.writeFile(wb, "Plantilla_Importacion_Fotocop_Econo.xlsx");
+}
+
+function mostrarManual() {
+    alert(
+        "📚 MANUAL DE COLUMNAS (IMPORTACIÓN):\n\n" +
+        "• Col 0 (Fecha): Formato AAAA-MM-DD o Fecha de Excel.\n" +
+        "• Cols 1-14: Lecturas pares (Inicio/Cierre) para Máquinas 1 a 7.\n" +
+        "• Cols 15-21: Cantidad de hojas no cobradas según su categoría.\n\n" +
+        "IMPORTANTE: No cambie el orden de las columnas ni los nombres de los encabezados."
+    );
 }
 
 // --- LÓGICA DE PROCESAMIENTO ---
+
 async function procesarExcel(file) {
     statusCard.style.display = 'block';
     logArea.innerHTML = "<div>🚀 Iniciando lectura de archivo...</div>";
@@ -61,21 +102,20 @@ async function procesarExcel(file) {
     reader.onload = async (e) => {
         try {
             const data = new Uint8Array(e.target.result);
-            // Uso de librería XLSX global (autorizada en head)
             const workbook = XLSX.read(data, { type: 'array' });
             const sheet = workbook.Sheets[workbook.SheetNames[0]];
             const rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
 
-            const datos = rows.slice(1); // Omitimos encabezados
+            const datos = rows.slice(1); // Omitimos la fila de encabezados
             let procesados = 0;
 
             for (const fila of datos) {
-                if (!fila[0]) continue; // Salta filas vacías
+                if (!fila[0]) continue; // Saltar filas sin fecha
 
                 const fechaStr = formatFecha(fila[0]);
                 const batch = writeBatch(db);
 
-                // Importar Lecturas de 7 máquinas (columnas 1-14)
+                // Importar Lecturas de las 7 máquinas
                 for (let i = 1; i <= 7; i++) {
                     const colIni = (i * 2) - 1;
                     const colCie = (i * 2);
@@ -89,11 +129,12 @@ async function procesarExcel(file) {
                         contador_inicio: valIni,
                         contador_cierre: valCie,
                         consumo: valCie - valIni,
-                        importadoPor: auth.currentUser.email
+                        importadoPor: auth.currentUser.email,
+                        timestamp: new Date()
                     });
                 }
 
-                // Importar No Cobrados (columnas 15-21)
+                // Importar No Cobrados
                 const docNoCobrados = doc(db, "no_cobradas", fechaStr);
                 batch.set(docNoCobrados, {
                     fecha: fechaStr,
@@ -104,7 +145,8 @@ async function procesarExcel(file) {
                     copias_originales: Number(fila[19]) || 0,
                     descartes: Number(fila[20]) || 0,
                     descartes_tecnicos: Number(fila[21]) || 0,
-                    importadoPor: auth.currentUser.email
+                    importadoPor: auth.currentUser.email,
+                    timestamp: new Date()
                 });
 
                 await batch.commit();
@@ -121,7 +163,6 @@ async function procesarExcel(file) {
 }
 
 function formatFecha(excelDate) {
-    // Si Excel envía la fecha como número de serie
     if (!isNaN(excelDate) && excelDate > 40000) {
         const date = new Date((excelDate - 25569) * 86400 * 1000);
         return date.toISOString().split('T')[0];
@@ -135,12 +176,11 @@ function actualizarProgreso(actual, total, fecha) {
     statusText.innerText = `Procesando: ${porcentaje}% (${actual}/${total})`;
     
     const entry = document.createElement('div');
-    entry.textContent = `[${fecha}] Registro procesado correctamente.`;
+    entry.textContent = `[${fecha}] Procesado OK`;
     logArea.appendChild(entry);
     logArea.scrollTop = logArea.scrollHeight;
 }
 
-// --- LIMPIEZA DE DATOS ---
 async function limpiarBaseDeDatos() {
     const confirmacion = confirm("⚠️ ¿ESTÁS SEGURO?\n\nSe borrarán TODAS las lecturas e importaciones anteriores. Esta acción NO se puede deshacer.");
     if (!confirmacion) return;
@@ -160,7 +200,7 @@ async function limpiarBaseDeDatos() {
         location.reload();
     } catch (error) {
         console.error(error);
-        alert("Error de permisos: No se pudo limpiar la base de datos.");
+        alert("Error de permisos.");
         btnLimpiar.innerText = "🗑️ Borrar todos los datos importados";
         btnLimpiar.disabled = false;
     }

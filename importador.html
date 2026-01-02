@@ -13,6 +13,25 @@
         .btn-danger-outline { background-color: transparent; color: var(--danger); border: 1px solid var(--danger); margin-top: 20px; width: auto; padding: 10px 20px; font-size: 13px; cursor: pointer; transition: all 0.3s; border-radius: 6px; font-weight: bold; }
         .btn-danger-outline:hover { background-color: var(--danger); color: white; }
         .log-area div { border-bottom: 1px solid #333; padding: 4px 0; font-family: monospace; }
+        
+        /* Estilos para la zona de recursos académicos */
+        .admin-resources {
+            margin-bottom: 25px;
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+        }
+        .resource-box {
+            flex: 1;
+            min-width: 300px;
+            background: #fdf2f7; /* Un tono muy suave del primario */
+            padding: 20px;
+            border-radius: 12px;
+            border: 1px solid rgba(164, 21, 91, 0.1);
+        }
+        .resource-box h4 { margin: 0 0 10px 0; color: var(--primary); }
+        .resource-box p { font-size: 0.85rem; color: #666; margin-bottom: 15px; }
+        .btn-group { display: flex; gap: 10px; }
     </style>
 </head>
 <body>
@@ -21,7 +40,17 @@
     <div class="main-content">
         <div class="container">
             <h2>📥 Importador de Historial 2025</h2>
-            <p>Sube tu archivo Excel respetando el orden de columnas (0 a 22).</p>
+            
+            <div class="admin-resources">
+                <div class="resource-box">
+                    <h4>📋 Plantillas de Estandarización</h4>
+                    <p>Para expandir el sistema a nuevas sedes, descargue la plantilla oficial. Esto asegura que el formato de columnas sea el correcto para el procesamiento.</p>
+                    <div class="btn-group">
+                        <button id="btnDescargarPlantilla" class="btn" style="background: var(--dark); font-size: 0.75rem; padding: 10px 15px;">📥 Descargar Plantilla Excel</button>
+                        <button id="btnDescargarManual" class="btn" style="background: var(--secondary); font-size: 0.75rem; padding: 10px 15px;">📑 Ver Manual de Columnas</button>
+                    </div>
+                </div>
+            </div>
 
             <div class="admin-card">
                 <div id="dropZone" class="drop-zone">
