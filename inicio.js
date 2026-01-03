@@ -7,7 +7,7 @@ import { collection, query, where, onSnapshot, doc, updateDoc } from "https://ww
 import { cargarSidebar } from './sidebar.js';
 import { verificarAcceso, renderSeguro } from './security.js';
 
-// --- ESTADO GLOBAL ---
+
 const STOCK_SEGURIDAD = 5; 
 let listaGlobalFaltantes = [];
 let listaEstadosMaquinas = [];
@@ -15,7 +15,6 @@ let cajaApuntes = { total: 0, efectivo: 0, transferencia: 0 };
 let cajaFoto = { total: 0, efectivo: 0, transferencia: 0, stock: 0, rapida: 0 };
 let usuarioActual = "";
 
-// --- INICIALIZACIÓN Y SEGURIDAD ---
 verificarAcceso(['superusuario', 'adm-eco', 'supervisor-apuntes', 'supervisor-fotocop', 'operario-apuntes', 'operario-fotocop']).then(info => {
     cargarSidebar('inicio');
     usuarioActual = info.nombreReal;
@@ -43,9 +42,8 @@ verificarAcceso(['superusuario', 'adm-eco', 'supervisor-apuntes', 'supervisor-fo
     actualizarKPIs();
 }).catch(err => console.error("Error:", err));
 
-// --- MANEJADORES DE EVENTOS ---
 function configurarEventos() {
-    // 1. Acordeón de Módulos
+
     const cards = document.querySelectorAll('.module-card');
     cards.forEach(card => {
         card.addEventListener('click', () => {
@@ -55,7 +53,6 @@ function configurarEventos() {
         });
     });
 
-    // 2. Botón de Pánico
     const btnPanic = document.getElementById('btn-panic-action');
     if (btnPanic) {
         btnPanic.addEventListener('click', async (e) => {
@@ -68,8 +65,6 @@ function configurarEventos() {
             }
         });
     }
-
-    // 3. Navegación
     const rutas = {
         'btn-nav-apuntes': 'apuntes.html', 'btn-nav-ventas': 'ventas.html',
         'btn-nav-stock': 'stock.html', 'btn-nav-insumos': 'insumos.html',
@@ -107,8 +102,6 @@ function vincularModales() {
     setupModal('kpi-foto-maquinas', 'modalMaquinas', 'btnCerrarModalMaq', renderizarListaMaquinas);
     setupModal('kpi-apuntes-caja', 'modalDetalleApuntes', 'btnCerrarApuntes', renderizarDetalleApuntes);
     setupModal('kpi-foto-caja', 'modalDetalleFoto', 'btnCerrarFoto', renderizarDetalleFoto);
-
-    // Eventos de Impresión
     document.getElementById('btnImprimirApuntes').addEventListener('click', () => {
         imprimirTicket("REPORTE CAJA - APUNTES", "cuerpoDetalleApuntes");
     });
@@ -117,7 +110,6 @@ function vincularModales() {
     });
 }
 
-// --- ESCUCHA DE DATOS ---
 function actualizarKPIs() {
     const hoy = new Date().toISOString().split('T')[0];
 
@@ -170,8 +162,6 @@ function actualizarKPIs() {
         document.getElementById('val-apuntes-stock').innerText = listaGlobalFaltantes.length;
     });
 }
-
-// --- RENDERIZADO ---
 function renderizarDetalleApuntes() {
     const contenedor = document.getElementById('cuerpoDetalleApuntes');
     contenedor.innerHTML = `
@@ -195,7 +185,6 @@ function renderizarDetalleFoto() {
     `;
 }
 
-// --- FUNCIÓN DE IMPRESIÓN ---
 function imprimirTicket(titulo, idContenedor) {
     const contenido = document.getElementById(idContenedor).innerHTML;
     const fechaHora = new Date().toLocaleString('es-AR');
