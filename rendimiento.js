@@ -1,19 +1,23 @@
 /**
  * @file rendimiento.js
- * @description Dashboard de analítica técnica y alertas de mantenimiento (CSP Safe).
+ * @description Dashboard técnico con validación de caché de búsqueda y alertas de mantenimiento.
  */
 import { db, auth } from './firebase-config.js';
 import { collection, query, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { verificarAcceso } from './security.js';
 import { cargarSidebar } from './sidebar.js';
 
-// Variables globales de estado
 let costoPasadaInsumo = 1;
 let precioVentaDobleFaz = 1;
 let limiteMantenimiento = 50000;
 let chartUtil, chartDist;
 
-// --- INICIO Y SEGURIDAD ---
+let ultimaBusquedaTecnica = {
+    desde: "",
+    hasta: "",
+    maquina: ""
+};
+
 verificarAcceso(['administrador', 'superusuario', 'adm-eco']).then(() => {
     cargarSidebar('rendimiento');
     inicializarFechas();
@@ -34,7 +38,6 @@ function vincularEventos() {
     document.getElementById('btnFiltrar').addEventListener('click', ejecutarAnalisis);
 }
 
-// --- CARGA DE CONFIGURACIÓN ---
 async function inicializarDatos() {
     try {
         const snapConf = await getDoc(doc(db, "configuracion", "global"));
@@ -51,18 +54,30 @@ async function inicializarDatos() {
     }
 }
 
-// --- LÓGICA DE ANÁLISIS ---
 async function ejecutarAnalisis() {
     const desdeStr = document.getElementById('fechaDesde').value;
     const hastaStr = document.getElementById('fechaHasta').value;
+    const maquinaFiltro = document.getElementById('filtroMaquina').value;
+    const btn = document.getElementById('btnFiltrar');
+
     if (!desdeStr || !hastaStr) return;
+
+    if (desdeStr === ultimaBusquedaTecnica.desde && 
+        hastaStr === ultimaBusquedaTecnica.hasta && 
+        maquinaFiltro === ultimaBusquedaTecnica.maquina) {
+        console.log("⚡ Rendimiento: Los parámetros no han cambiado. Usando vista actual.");
+        btn.innerText = "✅ ANALIZADO";
+        setTimeout(() => btn.innerText = "📊 ANALIZAR", 1500);
+        return;
+    }
 
     const desde = new Date(desdeStr + "T00:00:00");
     const hasta = new Date(hastaStr + "T23:59:59");
-    const maquinaFiltro = document.getElementById('filtroMaquina').value;
 
     try {
-        // Carga paralela de colecciones para mejorar velocidad
+        btn.disabled = true;
+        btn.innerText = "⏳ PROCESANDO...";
+
         const [snapL, snapNC, snapI] = await Promise.all([
             getDocs(collection(db, "lecturas_maquinas")),
             getDocs(collection(db, "no_cobradas")),
@@ -73,7 +88,6 @@ async function ejecutarAnalisis() {
         let dataPorMaquina = {};
         let todasLasLecturas = []; 
 
-        // 1. Procesar Lecturas (Contadores)
         snapL.forEach(docSnap => {
             const d = docSnap.data();
             const fechaDoc = d.fecha?.toDate ? d.fecha.toDate() : new Date(d.fecha);
@@ -88,7 +102,6 @@ async function ejecutarAnalisis() {
             }
         });
 
-        // 2. Procesar No Cobradas
         snapNC.forEach(docSnap => {
             const d = docSnap.data();
             const fechaNC = d.fecha?.toDate ? d.fecha.toDate() : new Date(d.fecha);
@@ -97,7 +110,6 @@ async function ejecutarAnalisis() {
             }
         });
 
-        // 3. Procesar Eficiencia (Papel)
         snapI.forEach(docSnap => {
             const d = docSnap.data();
             const fechaI = d.fecha?.toDate ? d.fecha.toDate() : new Date(d.fecha);
@@ -106,36 +118,36 @@ async function ejecutarAnalisis() {
             }
         });
 
-        // Cálculos Finales
         const cantNoCobradas = totalNoCobradasPesos / precioVentaDobleFaz;
         const prodNeta = totalConsumoBruto - cantNoCobradas;
-        const prodHojas = prodNeta / 2;
-        const eficiencia = totalHojasCompradas > 0 ? (prodHojas / totalHojasCompradas) * 100 : 0;
+        const eficiencia = totalHojasCompradas > 0 ? ((prodNeta / 2) / totalHojasCompradas) * 100 : 0;
 
-        // Actualizar Interfaz
         document.getElementById('kpiBruta').innerText = Math.round(totalConsumoBruto).toLocaleString();
         document.getElementById('kpiProdNeta').innerText = Math.round(prodNeta).toLocaleString();
         document.getElementById('kpiIngresoTeorico').innerText = `$ ${Math.round(prodNeta * precioVentaDobleFaz).toLocaleString()}`;
         document.getElementById('kpiEficiencia').innerText = `${eficiencia.toFixed(1)}%`;
         document.getElementById('kpiCostoReal').innerText = `$ ${Math.round(totalConsumoBruto * costoPasadaInsumo).toLocaleString()}`;
-        document.getElementById('kpiHojas').innerText = Math.round(prodHojas).toLocaleString();
+        document.getElementById('kpiHojas').innerText = Math.round(prodNeta / 2).toLocaleString();
+
+        ultimaBusquedaTecnica = { desde: desdeStr, hasta: hastaStr, maquina: maquinaFiltro };
 
         renderizarGraficos(dataPorMaquina);
         generarAlertasMantenimiento(todasLasLecturas, snapI);
 
     } catch (err) {
         console.error("Error en análisis técnico:", err);
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "📊 ANALIZAR";
     }
 }
 
-// --- ALERTAS DE MANTENIMIENTO ---
 function generarAlertasMantenimiento(todasLasLecturas, snapInsumos) {
     const container = document.getElementById('contenedorAlertas');
     const titulo = document.getElementById('tituloAlertas');
     container.innerHTML = "";
     let hayAlertas = false;
 
-    // Obtener fecha del último service por máquina
     let ultimosServices = {};
     snapInsumos.forEach(docSnap => {
         const d = docSnap.data();
@@ -147,7 +159,6 @@ function generarAlertasMantenimiento(todasLasLecturas, snapInsumos) {
         }
     });
 
-    // Calcular desgaste acumulado desde el último service
     const listaMaquinas = ["M1", "M2", "M3", "M4", "M5", "M6", "M7"];
     listaMaquinas.forEach(maq => {
         const fechaCorte = ultimosServices[maq] || new Date(0);
@@ -171,11 +182,9 @@ function generarAlertasMantenimiento(todasLasLecturas, snapInsumos) {
             container.appendChild(card);
         }
     });
-
     titulo.style.display = hayAlertas ? 'block' : 'none';
 }
 
-// --- GRÁFICOS ---
 function renderizarGraficos(dict) {
     if (chartUtil) chartUtil.destroy();
     if (chartDist) chartDist.destroy();

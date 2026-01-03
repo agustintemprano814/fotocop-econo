@@ -57,8 +57,8 @@ export function cargarSidebar(paginaActiva) {
                     {
                         titulo: "Panel de Auditoría",
                         items: [
-                            { id: 'dash', icon: '📈', label: 'Dashboard Fin.', url: 'dashboard-financiero.html', roles: ['adm-eco', 'superusuario'] },
-                            { id: 'rendimiento', icon: '📉', label: 'Dashboard Técnico', url: 'rendimiento.html', roles: ['adm-eco', 'superusuario'] }
+                            { id: 'dash', icon: '📈', label: 'Dash Financiero', url: 'dashboard-financiero.html', roles: ['adm-eco', 'superusuario'] },
+                            { id: 'rendimiento', icon: '📉', label: 'Dash Técnico', url: 'rendimiento.html', roles: ['adm-eco', 'superusuario'] }
                         ]
                     },
                     {

@@ -44,7 +44,18 @@
             border-top: 1px solid rgba(0,0,0,0.05);
         }
 
-        .kpi-card { border-top: 5px solid var(--primary) !important; background: white; padding: 20px; display: none; }
+        .kpi-card { 
+            border-top: 5px solid var(--primary) !important; 
+            background: white; 
+            padding: 20px; 
+            display: none; 
+            cursor: pointer; 
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .kpi-card:hover {
+            transform: scale(1.02);
+            box-shadow: var(--shadow);
+        }
         .kpi-title { font-size: 0.7rem; color: var(--gray); font-weight: bold; text-transform: uppercase; display: block; }
         .kpi-value { font-size: 1.3rem; color: var(--dark); font-weight: 700; margin: 5px 0 0 0; }
 
@@ -69,6 +80,60 @@
             cursor: pointer;
             width: auto !important;
         }
+
+        /* Modales Estilizados */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
+            z-index: 3000;
+            justify-content: center;
+            align-items: center;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background: white;
+            width: 90%;
+            max-width: 500px;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: slideIn 0.3s ease-out;
+        }
+        @keyframes slideIn { from { transform: translateY(-20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+        .detalle-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .modal-header-actions {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            border-bottom: 2px solid var(--primary);
+            padding-bottom: 10px;
+        }
+
+        .btn-print-mini {
+            background: #e2e8f0;
+            border: none;
+            padding: 5px 12px;
+            border-radius: 6px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: 0.2s;
+        }
+        .btn-print-mini:hover { background: #cbd5e1; }
     </style>
 </head>
 <body>
@@ -85,18 +150,25 @@
                 <div class="kpi-card" id="kpi-apuntes-caja">
                     <span class="kpi-title">APUNTES | Caja Hoy</span>
                     <p class="kpi-value" id="val-apuntes-caja">$ 0.00</p>
+                    <small style="font-size: 10px; color: var(--gray);">Ver desglose de pagos</small>
                 </div>
+                
                 <div class="kpi-card" id="kpi-apuntes-stock">
-                    <span class="kpi-title">APUNTES | Alertas</span>
-                    <p class="kpi-value" id="val-apuntes-stock">-</p>
+                    <span class="kpi-title">APUNTES | Alertas Stock</span>
+                    <p class="kpi-value" id="val-apuntes-stock">0</p>
+                    <small id="subtext-apuntes-stock" style="font-size: 10px; color: var(--gray);">Calculando...</small>
                 </div>
+
                 <div class="kpi-card" id="kpi-foto-caja">
                     <span class="kpi-title">FOTOCOP | Turno</span>
                     <p class="kpi-value" id="val-foto-caja">$ 0.00</p>
+                    <small style="font-size: 10px; color: var(--gray);">Ver tipo de ventas</small>
                 </div>
+
                 <div class="kpi-card" id="kpi-foto-maquinas">
                     <span class="kpi-title">FOTOCOP | Estado</span>
                     <p class="kpi-value" id="val-foto-maquinas">-</p>
+                    <small id="subtext-foto-maquinas" style="font-size: 10px; color: var(--gray);">Reporte técnico</small>
                 </div>
             </div>
 
@@ -128,7 +200,7 @@
                     <div class="module-options">
                         <button class="btn btn-primary" id="btn-nav-cierre-ap">📚 Cierre Apuntes</button>
                         <button class="btn btn-primary" id="btn-nav-cierre-fo">🖨️ Cierre Fotocopiadora</button>
-                        <button class="btn btn-primary" id="btn-nav-reportes">📂 Exportar Reportes Globales</button>
+                        <button class="btn btn-primary" id="btn-nav-reportes">📂 Exportar Reportes</button>
                     </div>
                 </div>
 
@@ -155,10 +227,48 @@
             <div id="panicZone" class="panic-zone">
                 <div>
                     <h4 style="margin:0; color:#c53030;">⚠️ Protocolo de Emergencia</h4>
-                    <p style="margin:5px 0 0 0; font-size:0.75rem; color:#742a2a;">Cierra el acceso público al sistema inmediatamente.</p>
+                    <p style="margin:5px 0 0 0; font-size:0.75rem; color:#742a2a;">Apagar el sistema para mantenimiento.</p>
                 </div>
                 <button class="btn-panic" id="btn-panic-action">Apagar Sistema</button>
             </div>
+        </div>
+    </div>
+
+    <div id="modalStock" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:var(--danger); margin-top:0;">⚠️ Alertas de Inventario</h3>
+            <ul id="listaFaltantes" style="margin:20px 0; max-height:250px; overflow-y:auto; padding-right:10px; border-top:1px solid #eee; border-bottom:1px solid #eee; padding-top:15px;"></ul>
+            <button class="btn btn-dark" id="btnCerrarModal" style="width:100%;">Entendido</button>
+        </div>
+    </div>
+
+    <div id="modalMaquinas" class="modal-overlay">
+        <div class="modal-content">
+            <h3 style="color:var(--dark); margin-top:0;">🛠️ Estado Técnico</h3>
+            <div id="listaMaquinasEstado" style="margin:20px 0;"></div>
+            <button class="btn btn-dark" id="btnCerrarModalMaq" style="width:100%;">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="modalDetalleApuntes" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header-actions">
+                <h3 style="color:var(--primary); margin:0;">💰 Detalle Caja Apuntes</h3>
+                <button id="btnImprimirApuntes" class="btn-print-mini">🖨️ Imprimir</button>
+            </div>
+            <div id="cuerpoDetalleApuntes" style="margin:20px 0;"></div>
+            <button class="btn btn-dark" id="btnCerrarApuntes" style="width:100%;">Cerrar</button>
+        </div>
+    </div>
+
+    <div id="modalDetalleFoto" class="modal-overlay">
+        <div class="modal-content">
+            <div class="modal-header-actions">
+                <h3 style="color:var(--primary); margin:0;">📊 Detalle Caja Fotocopiadora</h3>
+                <button id="btnImprimirFoto" class="btn-print-mini">🖨️ Imprimir</button>
+            </div>
+            <div id="cuerpoDetalleFoto" style="margin:20px 0;"></div>
+            <button class="btn btn-dark" id="btnCerrarFoto" style="width:100%;">Cerrar</button>
         </div>
     </div>
 

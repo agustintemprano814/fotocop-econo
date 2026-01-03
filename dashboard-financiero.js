@@ -1,6 +1,6 @@
 /**
  * @file dashboard-financiero.js
- * @description Lógica de analítica financiera con Chart.js y cumplimiento CSP.
+ * @description Analítica financiera con caché de parámetros para optimización de costos.
  */
 import { db } from './firebase-config.js';
 import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
@@ -9,7 +9,12 @@ import { cargarSidebar } from './sidebar.js';
 
 let chartEvolucion, chartPagos;
 
-// --- INICIO Y SEGURIDAD ---
+let ultimaBusqueda = {
+    desde: "",
+    hasta: "",
+    sector: ""
+};
+
 verificarAcceso(['adm-eco', 'superusuario']).then(() => {
     cargarSidebar('reportes'); 
     inicializarFechas();
@@ -31,16 +36,28 @@ function vincularEventos() {
     document.getElementById('btnFiltrar').addEventListener('click', cargarDashboard);
 }
 
-// --- LÓGICA DE DATOS ---
 async function cargarDashboard() {
     const desde = document.getElementById('fechaDesde').value;
     const hasta = document.getElementById('fechaHasta').value;
     const sector = document.getElementById('filtroSector').value;
+    const btn = document.getElementById('btnFiltrar');
 
     if (!desde || !hasta) return;
 
+    if (desde === ultimaBusqueda.desde && 
+        hasta === ultimaBusqueda.hasta && 
+        sector === ultimaBusqueda.sector) {
+        console.log("⚡ Optimización: Parámetros idénticos. No se requiere nueva consulta a Firebase.");
+
+        btn.innerText = "✅ DATOS AL DÍA";
+        setTimeout(() => btn.innerText = "🔍 ACTUALIZAR", 2000);
+        return; 
+    }
+
     try {
-        // Consulta de Ventas
+        btn.disabled = true;
+        btn.innerText = "⏳ PROCESANDO...";
+
         const qVentas = query(
             collection(db, "ventas"), 
             where("fecha", ">=", desde), 
@@ -48,7 +65,6 @@ async function cargarDashboard() {
         );
         const snapVentas = await getDocs(qVentas);
 
-        // Consulta de Cierres (donde están los gastos y diferencias)
         const qCierres = query(
             collection(db, "cierres_diarios"), 
             where("fechaString", ">=", desde), 
@@ -56,10 +72,16 @@ async function cargarDashboard() {
         );
         const snapCierres = await getDocs(qCierres);
 
+        ultimaBusqueda = { desde, hasta, sector };
+
         procesarDatos(snapVentas, snapCierres, sector);
+        
     } catch (err) {
         console.error("Error en Dashboard:", err);
         alert("Error al conectar con la base de datos.");
+    } finally {
+        btn.disabled = false;
+        btn.innerText = "🔍 ACTUALIZAR";
     }
 }
 
@@ -71,7 +93,6 @@ function procesarDatos(snapVentas, snapCierres, sectorFiltro) {
     let transferencia = 0;
     const ventasPorDia = {};
 
-    // Procesar Ventas Individuales
     snapVentas.forEach(doc => {
         const data = doc.data();
         if (sectorFiltro !== 'todos' && data.sector !== sectorFiltro) return;
@@ -86,7 +107,6 @@ function procesarDatos(snapVentas, snapCierres, sectorFiltro) {
         ventasPorDia[data.fecha] = (ventasPorDia[data.fecha] || 0) + total;
     });
 
-    // Procesar Gastos y Diferencias desde Cierres
     snapCierres.forEach(doc => {
         const data = doc.data();
         if (sectorFiltro !== 'todos' && data.sector !== sectorFiltro) return;
@@ -98,7 +118,6 @@ function procesarDatos(snapVentas, snapCierres, sectorFiltro) {
         diferencia += Number(d);
     });
 
-    // Actualizar KPIs en el DOM
     document.getElementById('kpiRecaudacion').innerText = `$ ${recaudacion.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
     document.getElementById('kpiGastos').innerText = `$ ${gastos.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
     document.getElementById('kpiNeto').innerText = `$ ${(recaudacion - gastos).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
@@ -110,16 +129,13 @@ function procesarDatos(snapVentas, snapCierres, sectorFiltro) {
     renderizarGraficos(ventasPorDia, efectivo, transferencia);
 }
 
-// --- RENDERIZADO DE GRÁFICOS ---
 function renderizarGraficos(ventasPorDia, efectivo, transferencia) {
-    // Destruir gráficos previos para evitar solapamientos visuales
     if (chartEvolucion) chartEvolucion.destroy();
     if (chartPagos) chartPagos.destroy();
 
     const labels = Object.keys(ventasPorDia).sort();
     const values = labels.map(l => ventasPorDia[l]);
 
-    // Gráfico de Línea: Evolución
     chartEvolucion = new Chart(document.getElementById('chartEvolucion'), {
         type: 'line',
         data: {
@@ -141,7 +157,6 @@ function renderizarGraficos(ventasPorDia, efectivo, transferencia) {
         }
     });
 
-    // Gráfico de Dona: Medios de Pago
     chartPagos = new Chart(document.getElementById('chartPagos'), {
         type: 'doughnut',
         data: {

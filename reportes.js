@@ -1,13 +1,20 @@
 /**
  * @file reportes.js
- * @description Lógica de exportación de datos a Excel con cumplimiento CSP.
+ * @description Lógica de exportación a Excel con optimización de caché de parámetros para ahorro de cuota.
  */
 import { db } from './firebase-config.js';
 import { collection, query, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 import { cargarSidebar } from './sidebar.js';
 import { verificarAcceso } from './security.js';
 
-// --- INICIO Y SEGURIDAD ---
+
+let cacheReportes = {
+    btn_export_cierres: "",
+    btn_export_tecnico: "",
+    btn_export_ventas: "",
+    btn_export_stock: ""
+};
+
 verificarAcceso(['adm-eco', 'superusuario']).then(() => {
     cargarSidebar('reportes');
     inicializarFiltros();
@@ -40,13 +47,6 @@ function vincularEventos() {
         exportar('movimientos_stock', 'Auditoria_Stock', e.currentTarget);
     });
 }
-
-// --- LÓGICA DE EXPORTACIÓN ---
-
-/**
- * Aplana objetos anidados para que sean compatibles con celdas de Excel.
- * Ejemplo: { caja: { total: 100 } } -> { caja_total: 100 }
- */
 function aplanarObjeto(obj, prefijo = '') {
     let res = {};
     for (let k in obj) {
@@ -54,7 +54,6 @@ function aplanarObjeto(obj, prefijo = '') {
         if (typeof obj[k] === 'object' && obj[k] !== null && !Array.isArray(obj[k]) && !(obj[k].seconds)) {
             Object.assign(res, aplanarObjeto(obj[k], prop));
         } else {
-            // Manejo especial para Timestamps de Firebase
             if (obj[k] && obj[k].seconds) {
                 res[prop] = new Date(obj[k].seconds * 1000).toLocaleString();
             } else {
@@ -69,27 +68,30 @@ async function exportar(nombreColeccion, nombreArchivo, boton) {
     const mes = parseInt(document.getElementById('selectMes').value);
     const anio = parseInt(document.getElementById('selectAnio').value);
     const sectorFiltro = document.getElementById('selectSector').value;
-    
-    // Formato de búsqueda: "2025-01"
+    const botonId = boton.id;
     const periodoBuscado = `${anio}-${(mes + 1).toString().padStart(2, '0')}`; 
+    const fingerprintActual = `${periodoBuscado}_${sectorFiltro}_${nombreColeccion}`;
+
+    if (cacheReportes[botonId] === fingerprintActual) {
+        if (!confirm("Ya generó este reporte recientemente con los mismos filtros. ¿Desea descargarlo nuevamente de Firebase?")) {
+            return;
+        }
+    }
 
     boton.disabled = true;
     const textoOriginal = boton.innerText;
     boton.innerText = "⏳ Procesando...";
 
     try {
+
         const q = query(collection(db, nombreColeccion));
         const snap = await getDocs(q);
         const datosFinales = [];
 
         snap.forEach(docSnap => {
             const raw = docSnap.data();
-            
-            // Filtro por Fecha (basado en el campo fechaString o fecha del objeto)
             const fString = raw.fechaString || (raw.fecha && typeof raw.fecha === 'string' ? raw.fecha : "");
             const coincideFecha = fString.startsWith(periodoBuscado);
-            
-            // Filtro por Sector
             const coincideSector = sectorFiltro === "Todos" || raw.sector === sectorFiltro;
 
             if (coincideFecha && coincideSector) {
@@ -99,18 +101,18 @@ async function exportar(nombreColeccion, nombreArchivo, boton) {
         });
 
         if (datosFinales.length === 0) {
-            alert(`No se encontraron registros para ${periodoBuscado} en el sector ${sectorFiltro}.`);
+            alert(`No hay registros para ${periodoBuscado} en el sector ${sectorFiltro}.`);
         } else {
-            // Uso de la librería XLSX (SheetJS)
             const ws = XLSX.utils.json_to_sheet(datosFinales);
             const wb = XLSX.utils.book_new();
             XLSX.utils.book_append_sheet(wb, ws, "Reporte Auditoria");
-            
             XLSX.writeFile(wb, `${nombreArchivo}_${periodoBuscado}.xlsx`);
+            
+            cacheReportes[botonId] = fingerprintActual;
         }
     } catch (e) {
         console.error("Error en exportación:", e);
-        alert("Ocurrió un error al generar el reporte. Verifique su conexión.");
+        alert("Ocurrió un error al generar el reporte.");
     } finally {
         boton.disabled = false;
         boton.innerText = textoOriginal;
